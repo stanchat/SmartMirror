@@ -76,6 +76,7 @@
 		"module-alias": "^2.2.3",
 		"moment": "^2.30.1",
 		"node-ical": "^0.20.1",
+		"picklejs": "^0.101.0",
 		"pm2": "^5.4.3",
 		"socket.io": "^4.8.1",
 		"suncalc": "^1.9.0",

@@ -43,6 +43,7 @@ Module.register("calendar", {
 			{
 				symbol: "calendar-alt",
 				url: "https://www.calendarlabs.com/templates/ical/US-Holidays.ics"
+				//url: "https://everydaybarber.tccons.com/default/wpbm.ics"
 			}
 		],
 		customEvents: [

@@ -1,0 +1,57 @@
+
+> magicmirror@2.30.0 start
+> npm run start:x11
+
+
+> magicmirror@2.30.0 start:x11
+> DISPLAY="${DISPLAY:=:0}" ./node_modules/.bin/electron js/electron.js
+
+[2025-03-15 20:45:01.944] [LOG]   Starting MagicMirror: v2.30.0 
+[2025-03-15 20:45:01.955] [LOG]   Loading config ... 
+[2025-03-15 20:45:01.956] [LOG]   config template file not exists, no envsubst 
+[2025-03-15 20:45:02.140] [34m[INFO] [39m [34mChecking config file /home/smevrdaybarber1/MagicMirror/config/config.js ...[39m 
+[2025-03-15 20:45:02.165] [34m[INFO] [39m [34m[32mYour configuration file doesn't contain syntax errors :)[34m[39m 
+[2025-03-15 20:45:02.166] [34m[INFO] [39m [34mChecking modules structure configuration ...[39m 
+[2025-03-15 20:45:02.205] [34m[INFO] [39m [34m[32mYour modules structure configuration doesn't contain errors :)[34m[39m 
+[2025-03-15 20:45:02.206] [LOG]   Loading module helpers ... 
+[2025-03-15 20:45:02.206] [LOG]   No helper found for module: alert. 
+[2025-03-15 20:45:02.208] [LOG]   Initializing new module helper ... 
+[2025-03-15 20:45:02.209] [LOG]   Module helper loaded: updatenotification 
+[2025-03-15 20:45:02.209] [LOG]   No helper found for module: clock. 
+[2025-03-15 20:45:02.255] [LOG]   Initializing new module helper ... 
+[2025-03-15 20:45:02.255] [LOG]   Module helper loaded: calendar 
+[2025-03-15 20:45:02.256] [LOG]   No helper found for module: compliments. 
+[2025-03-15 20:45:02.256] [LOG]   No helper found for module: weather. 
+[2025-03-15 20:45:02.256] [LOG]   No helper found for module: MMM-BarberTracker. 
+[2025-03-15 20:45:02.293] [LOG]   Initializing new module helper ... 
+[2025-03-15 20:45:02.293] [LOG]   Module helper loaded: newsfeed 
+[2025-03-15 20:45:02.293] [LOG]   All module helpers loaded. 
+[2025-03-15 20:45:02.296] [LOG]   Starting server on port 8080 ...  
+[2025-03-15 20:45:02.708] [LOG]   Server started ... 
+[2025-03-15 20:45:02.708] [LOG]   Connecting socket for: updatenotification 
+[2025-03-15 20:45:02.709] [LOG]   Starting module helper: updatenotification 
+[2025-03-15 20:45:02.709] [LOG]   Connecting socket for: calendar 
+[2025-03-15 20:45:02.710] [LOG]   Starting node helper for: calendar 
+[2025-03-15 20:45:02.710] [LOG]   Connecting socket for: newsfeed 
+[2025-03-15 20:45:02.710] [LOG]   Starting node helper for: newsfeed 
+[2025-03-15 20:45:02.711] [LOG]   Sockets connected & modules started ... 
+[2025-03-15 20:45:02.802] [LOG]   Launching application. 
+[2025-03-15 20:45:03.279] [34m[INFO] [39m [34mSystem information:[39m
+[34m### SYSTEM:   manufacturer: ; model: ; virtual: false[39m
+[34m### OS:       platform: linux; distro: Debian GNU/Linux; release: 12; arch: arm64; kernel: 6.6.74+rpt-rpi-2712[39m
+[34m### VERSIONS: electron: 32.2.7; used node: 22.14.0; installed node: 22.14.0; npm: 10.9.2; pm2: 5.4.3[39m
+[34m### OTHER:    timeZone: America/Chicago; ELECTRON_ENABLE_GPU: undefined[39m 
+[2025-03-15 20:45:03.807] [LOG]   Create new calendarfetcher for url: https://ics.calendarlabs.com/76/mm3137/US_Holidays.ics - Interval: 604800000 
+[2025-03-15 20:45:03.833] [LOG]   Create new newsfetcher for url: https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml - Interval: 300000 
+[2025-03-15 20:45:03.836] [34m[INFO] [39m [34mupdatenotification: Updater Class Loaded![39m 
+[2025-03-15 20:45:03.837] [34m[INFO] [39m [34mupdatenotification: Checking PM2 using...[39m 
+[2025-03-15 20:45:03.837] [34m[INFO] [39m [34mupdatenotification: [PM2] You are not using pm2[39m 
+[2025-03-15 20:45:03.837] [34m[INFO] [39m [34mChecking git for module: MMM-BarberTracker[39m 
+[2025-03-15 20:45:03.838] [34m[INFO] [39m [34mChecking git for module: MagicMirror[39m 
+[2025-03-15 20:45:04.140] [34m[INFO] [39m [34mCalendar-Fetcher: Broadcasting 10 events from https://ics.calendarlabs.com/76/mm3137/US_Holidays.ics.[39m 
+[2025-03-15 20:45:04.147] [34m[INFO] [39m [34mNewsfeed-Fetcher: Broadcasting 21 items.[39m 
+[2025-03-15 20:45:06.640] [LOG]   Shutting down server... 
+[2025-03-15 20:45:06.640] [LOG]   Stopping module helper: updatenotification 
+[2025-03-15 20:45:06.640] [LOG]   Stopping module helper: calendar 
+[2025-03-15 20:45:06.641] [LOG]   Stopping module helper: newsfeed 
+[2025-03-15 20:45:06.641] [LOG]   Node_helpers stopped ... 

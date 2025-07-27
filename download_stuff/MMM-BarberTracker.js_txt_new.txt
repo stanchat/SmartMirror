@@ -1,0 +1,63 @@
+Module.register("MMM-BarberTracker", {
+  defaults: {
+    apiUrl: "https://whimsical-spirit-ecf25d2215.strapiapp.com/api/appointments",
+    apiKey: "114748bcb1da2f16fa3ef976fd8796dbad6f7538aeca7b670c366cec593df09030b9ec25f8045d3aeda5736fcda0d94b31447c641b49040740a6012cb2884df8383280b5660dd4851503470496921c4cb32ee07d278eea12a27969750c6045746462ac0804f9c8401395fc14df5baa7f378d906cb6c669162556939cf93cf73c",
+    refreshInterval: 300000 // 5 minutes
+  },
+
+  start: function() {
+    this.appointments = [];
+    this.earnings = 0;
+    this.monthlyGoal = 3000; // Fetch from CMS later
+    this.fetchData();
+    setInterval(() => this.fetchData(), this.config.refreshInterval);
+  },
+
+  fetchData: function() {
+    const today = new Date().toISOString().split('T')[0];
+    fetch(`${this.config.apiUrl}?filters[Appointment_DateTime][$contains]=${today}`, {
+      headers: { Authorization: `Bearer ${this.config.apiKey}` }
+    })
+      .then(res => res.json())
+      .then(data => {
+        this.appointments = data.data;
+        this.earnings = data.data.reduce((sum, appt) => sum + appt.attributes.Price, 0);
+        this.updateDom();
+      });
+  },
+
+  getDom: function() {
+    const wrapper = document.createElement("div");
+    wrapper.className = "barber-tracker";
+
+    // Today's Appointments
+    const header = document.createElement("h2");
+    header.innerHTML = "Today's Appointments";
+    wrapper.appendChild(header);
+
+    const list = document.createElement("ul");
+    this.appointments.forEach(appt => {
+      const li = document.createElement("li");
+      li.innerHTML = `
+        ${appt.attributes.ClientName} - 
+        ${appt.attributes.ServiceType} - 
+        $${appt.attributes.Price}
+      `;
+      list.appendChild(li);
+    });
+
+    // Earnings & Budget Progress
+    const earningsDiv = document.createElement("div");
+    earningsDiv.innerHTML = `
+      <h3>Today's Earnings: $${this.earnings}</h3>
+      <div class="progress-bar">
+        <div class="progress" style="width: ${(this.earnings / this.monthlyGoal) * 100}%"></div>
+      </div>
+      <p>Monthly Goal: $${this.monthlyGoal}</p>
+    `;
+
+    wrapper.appendChild(list);
+    wrapper.appendChild(earningsDiv);
+    return wrapper;
+  }
+});
