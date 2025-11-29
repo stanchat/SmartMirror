@@ -1,18 +1,38 @@
 # SmartMirror on Replit
 
 ## Overview
-This is a **SmartMirror** application running on Replit - a web-based simulation of a smart mirror system built on MagicMirror². It provides face recognition simulation, voice command emulation, appointment scheduling, Telegram messaging relay, calendar integration, and budget tracking for barbers.
+This is a **production-ready SmartMirror** application running on Replit - a web-based smart mirror system built on MagicMirror² with **real face recognition** (Azure Face API) and **real voice commands** (Web Speech API). It provides personalized greetings, voice-activated control, appointment scheduling, Telegram messaging relay, calendar integration, and budget tracking for barbers.
 
 **Version:** 2.30.0 (MagicMirror² base)  
 **Language:** Node.js (v20.19.3)  
 **Last Updated:** November 29, 2025
+
+## Production Features
+
+### Real Face Recognition (Azure Face API)
+- Uses Microsoft Azure Face API for actual face detection
+- Detects face attributes (age, gender, emotions)
+- Webcam access via browser's `getUserMedia()` API
+- Falls back to simulation mode if camera unavailable
+
+### Real Voice Commands (Web Speech API)
+- Browser-based speech recognition (Chrome/Edge)
+- "Mirror mirror..." wake phrase activation
+- Continuous listening mode with visual feedback
+- Text-to-speech responses
+
+### Status Indicators
+- 📷 **Camera Ready** - Webcam available
+- 🎤 **Voice Ready** - Speech recognition supported
+- ☁️ **Azure Connected** - Azure Face API configured
 
 ## Pages
 
 ### Mirror View (`/`)
 Customer-facing smart mirror display with:
 - Clock and date
-- Face recognition simulation with voice commands
+- Real face recognition with camera
+- Real voice commands with microphone
 - Calendar with US holidays
 - Weather (current + forecast) for Chicago
 - Telegram message display
@@ -25,61 +45,32 @@ Barber-only management page with three tabs:
 2. **Telegram Bot Tab:** Send messages to mirror, quick bot commands, message history
 3. **Mirror Controls Tab:** Remote control for face detection, greetings, show messages
 
-## Features
+## Voice Commands
 
-### 1. Face Recognition Simulation
-- Simulated face detection with random recognition events
-- Dynamic "Welcome, [Name]" messages with animations
-- Face training for new users
-- Recognition confidence display
-- Personalized TTS greeting via Web Speech API
+Say "Mirror mirror..." followed by:
 
-### 2. Voice Assistant Emulation
-- Text input interface to simulate voice commands
-- "Mirror mirror..." wake phrase activation
-- Browser-based text-to-speech (Web Speech API)
-- Supported commands:
-  - `Mirror mirror, detect face` - Triggers face recognition
-  - `Mirror mirror, new face` - Trains a new user
-  - `Mirror mirror, show messages` - Displays Telegram messages
-  - `Mirror mirror, show appointments` - Shows today's schedule
-  - `Mirror mirror, show calendar` - Displays upcoming events
-  - `Mirror mirror, weather` - Shows weather info
-  - `Mirror mirror, news` - Shows news headlines
-  - `Mirror mirror, what time is it` - Speaks the current time
-  - `Mirror mirror, what's the date` - Speaks today's date
-  - `Mirror mirror, help` - Lists available commands
+| Command | Action |
+|---------|--------|
+| `detect face` | Triggers face recognition with camera |
+| `who am i` | Identifies the person |
+| `register` / `new face` | Trains a new user |
+| `show messages` | Displays Telegram messages |
+| `show appointments` | Shows today's schedule |
+| `show calendar` | Displays upcoming events |
+| `weather` | Shows weather info |
+| `news` | Shows news headlines |
+| `what time is it` | Speaks the current time |
+| `what's the date` | Speaks today's date |
+| `clear` | Returns to idle mode |
+| `help` | Lists available commands |
 
-### 3. Telegram Relay Display
-- Real-time message display on mirror
-- Messages sent from admin panel appear on mirror
-- TTS announcement of new messages
-- Message history with sender and timestamp
+## Environment Variables
 
-### 4. Calendar Integration
-- US Holidays via iCal feed
-- Upcoming events display
+### Required Secrets
+- `AZURE_FACE_API_KEY` - Your Azure Face API subscription key
 
-### 5. Appointment Scheduler
-- View today's appointments
-- Book new appointments with client name, service, and time
-- Display barber assignments
-- Real-time updates
-
-### 6. Budget Tracker (Admin Only)
-- Weekly and monthly goal tracking with progress bars
-- Add earnings with amount, service, and client
-- Transaction history
-- Edit goals functionality
-
-### 7. Weather Module
-- Current weather for Chicago
-- 5-day forecast
-- Uses Open-Meteo API (no API key required)
-
-### 8. News Feed
-- NY Times RSS feed
-- Auto-rotating headlines
+### Environment Variables
+- `AZURE_FACE_ENDPOINT` - Azure Face API endpoint URL
 
 ## Project Architecture
 
@@ -92,7 +83,7 @@ Barber-only management page with three tabs:
 │   └── api.js             - Admin API routes
 ├── modules/
 │   ├── default/           - Built-in MagicMirror modules
-│   ├── MMM-Face-Recognition-SMAI/  - Face recognition module
+│   ├── MMM-Face-Recognition-SMAI/  - Face recognition with Azure + voice
 │   ├── MMM-TelegramRelayDisplay/   - Telegram message display
 │   └── MMM-Appointments/  - Appointment scheduler module
 ├── backend/
@@ -106,7 +97,8 @@ Barber-only management page with three tabs:
 ### Custom Modules
 
 #### MMM-Face-Recognition-SMAI
-- **Purpose:** Face detection simulation + voice commands
+- **Purpose:** Real face detection (Azure) + real voice commands (Web Speech API)
+- **Features:** Camera access, Azure Face API integration, speech recognition, TTS
 - **Files:** `MMM-Face-Recognition-SMAI.js`, `node_helper.js`, CSS
 
 #### MMM-TelegramRelayDisplay
@@ -137,6 +129,17 @@ All data is persisted in `backend/data.json`:
 - **budget:** Weekly/monthly goals and transactions
 - **telegram_messages:** Message history
 - **recognition_log:** History of face recognitions
+
+## Browser Requirements
+
+### For Voice Commands
+- **Chrome** or **Edge** (required for Web Speech API)
+- Microphone permission must be granted
+- HTTPS connection (provided by Replit)
+
+### For Camera/Face Recognition
+- Webcam access must be granted
+- Modern browser with `getUserMedia()` support
 
 ## Configuration
 
@@ -171,21 +174,16 @@ This starts the server at `http://0.0.0.0:5000`
 - Admin: `http://0.0.0.0:5000/admin`
 
 ### Testing Voice Commands
-1. Type a command in the voice input field (e.g., "Mirror mirror, detect face")
-2. Click Send or press Enter
+1. Click "Start Listening" or "Voice Command" button
+2. Say "Mirror mirror, [command]" (e.g., "Mirror mirror, detect face")
 3. The mirror will respond with text and TTS audio
+4. Or type commands in the text input as fallback
 
-### Sending Messages to Mirror
-1. Go to `/admin` and click "Telegram Bot" tab
-2. Enter sender name and message
-3. Click "Send to Mirror"
-4. Message appears on the mirror display
-
-### Adding Earnings (Admin Panel)
-1. Go to `/admin` (Budget tab)
-2. Enter amount, service, and client name
-3. Click "+ Add Earning"
-4. Progress bars update automatically
+### Testing Face Recognition
+1. Click "Detect Face" button
+2. Allow camera access when prompted
+3. Look at the camera
+4. Azure Face API will analyze and respond
 
 ## Deployment
 The project is configured for Replit deployment with:
@@ -193,6 +191,13 @@ The project is configured for Replit deployment with:
 - **Run Command:** `node server.js`
 
 ## Recent Changes
+- **2025-11-29:** Production Face & Voice Recognition
+  - Integrated Azure Face API for real face detection
+  - Added Web Speech API for real voice commands
+  - Camera access via getUserMedia()
+  - Status indicators (Camera/Voice/Azure)
+  - Visual feedback for listening state
+
 - **2025-11-29:** Full SmartMirror Feature Implementation
   - Added MMM-TelegramRelayDisplay module for message relay
   - Added Calendar module with US Holidays
@@ -201,17 +206,15 @@ The project is configured for Replit deployment with:
   - Added mirror remote controls
   - Updated weather to Chicago location
 
-- **2025-11-29:** Separated Budget Tracker to Admin Panel
-  - Removed budget tracker from mirror view
-  - Created `/admin` page for barbers
-
 ## User Preferences
 - Budget tracker should be admin/barber only (not on mirror)
 - Mirror should display: clock, calendar, face recognition, weather, messages, appointments, news
+- Real face and voice recognition for production use
 
 ## Technical Notes
-- Face recognition is simulated (no actual camera/OpenCV)
-- Voice commands use text input (no actual microphone)
+- Face recognition uses Azure Face API (cloud-based)
+- Voice commands use browser's Web Speech API
 - TTS uses browser's Web Speech API
 - All data persists in JSON file between sessions
 - Server proxies MagicMirror from internal port 8080 to public port 5000
+- Falls back to simulation mode if camera/microphone unavailable
