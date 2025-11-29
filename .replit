@@ -1,4 +1,4 @@
-modules = ["nodejs-20", "web"]
+modules = ["nodejs-20", "web", "python-3.11"]
 [agent]
 expertMode = true
 
@@ -21,21 +21,17 @@ args = "MagicMirror Server"
 name = "MagicMirror Server"
 author = "agent"
 
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "npm run server"
-waitForPort = 5000
-
 [workflows.workflow.metadata]
 outputType = "webview"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "bash start.sh"
+waitForPort = 5000
 
 [[ports]]
 localPort = 5000
 externalPort = 80
-
-[[ports]]
-localPort = 37331
-externalPort = 3000
 
 [deployment]
 deploymentTarget = "autoscale"
