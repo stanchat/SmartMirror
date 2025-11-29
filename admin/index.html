@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartMirror Admin - Budget Tracker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #fff;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .header h1 span {
+            color: #7c3aed;
+        }
+
+        .back-link {
+            color: #a78bfa;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .stat-card h3 {
+            font-size: 14px;
+            color: #a0a0a0;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .stat-card .value {
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+
+        .stat-card .value.green { color: #22c55e; }
+        .stat-card .value.blue { color: #3b82f6; }
+        .stat-card .value.purple { color: #a855f7; }
+
+        .progress-container {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            height: 12px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            border-radius: 8px;
+            transition: width 0.5s ease;
+        }
+
+        .progress-bar.weekly { background: linear-gradient(90deg, #22c55e, #16a34a); }
+        .progress-bar.monthly { background: linear-gradient(90deg, #a855f7, #7c3aed); }
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            font-size: 13px;
+            color: #a0a0a0;
+        }
+
+        .section {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .section h2 {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .btn {
+            background: #7c3aed;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn:hover {
+            background: #6d28d9;
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .transaction-list {
+            list-style: none;
+        }
+
+        .transaction-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .transaction-item:last-child {
+            border-bottom: none;
+        }
+
+        .transaction-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .transaction-service {
+            font-weight: 500;
+            font-size: 15px;
+        }
+
+        .transaction-client {
+            font-size: 13px;
+            color: #a0a0a0;
+        }
+
+        .transaction-date {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .transaction-amount {
+            font-size: 18px;
+            font-weight: 600;
+            color: #22c55e;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 14px;
+            color: #a0a0a0;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+            font-size: 14px;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #7c3aed;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: #1a1a2e;
+            border-radius: 16px;
+            padding: 32px;
+            width: 100%;
+            max-width: 500px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .modal-header h3 {
+            font-size: 20px;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: #666;
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        .close-btn:hover {
+            color: white;
+        }
+
+        .goals-form {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1>💰 <span>SmartMirror</span> Admin</h1>
+        <a href="/" class="back-link">← Back to Mirror</a>
+    </header>
+
+    <div class="container">
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>Weekly Goal Progress</h3>
+                <div class="value green" id="weeklyEarned">$0</div>
+                <div class="progress-container">
+                    <div class="progress-bar weekly" id="weeklyProgress" style="width: 0%"></div>
+                </div>
+                <div class="progress-label">
+                    <span id="weeklyPercent">0%</span>
+                    <span id="weeklyGoal">Goal: $0</span>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <h3>Monthly Goal Progress</h3>
+                <div class="value purple" id="monthlyEarned">$0</div>
+                <div class="progress-container">
+                    <div class="progress-bar monthly" id="monthlyProgress" style="width: 0%"></div>
+                </div>
+                <div class="progress-label">
+                    <span id="monthlyPercent">0%</span>
+                    <span id="monthlyGoal">Goal: $0</span>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <h3>Remaining This Week</h3>
+                <div class="value blue" id="weeklyRemaining">$0</div>
+                <p style="color: #666; font-size: 13px; margin-top: 8px;">to reach weekly goal</p>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-header">
+                <h2>Add New Earning</h2>
+            </div>
+            <form id="addEarningForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="amount">Amount ($)</label>
+                        <input type="number" id="amount" placeholder="45" required min="1" step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label for="service">Service</label>
+                        <input type="text" id="service" placeholder="Haircut" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="client">Client Name</label>
+                        <input type="text" id="client" placeholder="John" required>
+                    </div>
+                    <div class="form-group" style="display: flex; align-items: flex-end;">
+                        <button type="submit" class="btn" style="width: 100%;">+ Add Earning</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div class="section">
+            <div class="section-header">
+                <h2>Recent Transactions</h2>
+                <button class="btn btn-secondary" onclick="openGoalsModal()">Edit Goals</button>
+            </div>
+            <ul class="transaction-list" id="transactionList">
+                <li class="loading">Loading transactions...</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="modal" id="goalsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Edit Goals</h3>
+                <button class="close-btn" onclick="closeGoalsModal()">&times;</button>
+            </div>
+            <form id="goalsForm">
+                <div class="goals-form">
+                    <div class="form-group">
+                        <label for="weeklyGoalInput">Weekly Goal ($)</label>
+                        <input type="number" id="weeklyGoalInput" placeholder="2000" required min="1">
+                    </div>
+                    <div class="form-group">
+                        <label for="monthlyGoalInput">Monthly Goal ($)</label>
+                        <input type="number" id="monthlyGoalInput" placeholder="8000" required min="1">
+                    </div>
+                </div>
+                <button type="submit" class="btn" style="width: 100%; margin-top: 16px;">Save Goals</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let budgetData = null;
+
+        async function loadBudget() {
+            try {
+                const response = await fetch('/api/budget');
+                const data = await response.json();
+                budgetData = data;
+                updateUI(data);
+            } catch (error) {
+                console.error('Failed to load budget:', error);
+                document.getElementById('transactionList').innerHTML = 
+                    '<li class="empty-state">Failed to load data. Please refresh.</li>';
+            }
+        }
+
+        function updateUI(data) {
+            const budget = data.budget;
+            const transactions = data.recent_transactions || [];
+
+            document.getElementById('weeklyEarned').textContent = '$' + budget.current_week_earned;
+            document.getElementById('monthlyEarned').textContent = '$' + budget.current_month_earned;
+            document.getElementById('weeklyRemaining').textContent = '$' + Math.max(0, budget.weekly_remaining);
+            
+            document.getElementById('weeklyProgress').style.width = Math.min(budget.weekly_progress, 100) + '%';
+            document.getElementById('monthlyProgress').style.width = Math.min(budget.monthly_progress, 100) + '%';
+            
+            document.getElementById('weeklyPercent').textContent = budget.weekly_progress + '%';
+            document.getElementById('monthlyPercent').textContent = budget.monthly_progress + '%';
+            
+            document.getElementById('weeklyGoal').textContent = 'Goal: $' + budget.weekly_goal;
+            document.getElementById('monthlyGoal').textContent = 'Goal: $' + budget.monthly_goal;
+
+            document.getElementById('weeklyGoalInput').value = budget.weekly_goal;
+            document.getElementById('monthlyGoalInput').value = budget.monthly_goal;
+
+            const listEl = document.getElementById('transactionList');
+            if (transactions.length === 0) {
+                listEl.innerHTML = '<li class="empty-state">No transactions yet</li>';
+            } else {
+                listEl.innerHTML = transactions.map(t => `
+                    <li class="transaction-item">
+                        <div class="transaction-info">
+                            <span class="transaction-service">${t.service}</span>
+                            <span class="transaction-client">${t.client}</span>
+                            <span class="transaction-date">${t.date}</span>
+                        </div>
+                        <span class="transaction-amount">+$${t.amount}</span>
+                    </li>
+                `).join('');
+            }
+        }
+
+        document.getElementById('addEarningForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const amount = parseFloat(document.getElementById('amount').value);
+            const service = document.getElementById('service').value;
+            const client = document.getElementById('client').value;
+
+            try {
+                await fetch('/api/budget/transaction', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ amount, service, client })
+                });
+                
+                document.getElementById('amount').value = '';
+                document.getElementById('service').value = '';
+                document.getElementById('client').value = '';
+                
+                loadBudget();
+            } catch (error) {
+                alert('Failed to add earning. Please try again.');
+            }
+        });
+
+        document.getElementById('goalsForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const weekly_goal = parseFloat(document.getElementById('weeklyGoalInput').value);
+            const monthly_goal = parseFloat(document.getElementById('monthlyGoalInput').value);
+
+            try {
+                await fetch('/api/budget/goals', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ weekly_goal, monthly_goal })
+                });
+                
+                closeGoalsModal();
+                loadBudget();
+            } catch (error) {
+                alert('Failed to update goals. Please try again.');
+            }
+        });
+
+        function openGoalsModal() {
+            document.getElementById('goalsModal').classList.add('active');
+        }
+
+        function closeGoalsModal() {
+            document.getElementById('goalsModal').classList.remove('active');
+        }
+
+        document.getElementById('goalsModal').addEventListener('click', (e) => {
+            if (e.target.id === 'goalsModal') closeGoalsModal();
+        });
+
+        loadBudget();
+        setInterval(loadBudget, 30000);
+    </script>
+</body>
+</html>

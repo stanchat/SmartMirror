@@ -1,13 +1,49 @@
 {
   "users": [
-    {"id": 1, "name": "Stan", "trained_at": "2025-01-15", "recognition_count": 42},
-    {"id": 2, "name": "Sarah", "trained_at": "2025-02-20", "recognition_count": 28},
-    {"id": 3, "name": "Mike", "trained_at": "2025-03-10", "recognition_count": 15}
+    {
+      "id": 1,
+      "name": "Stan",
+      "trained_at": "2025-01-15",
+      "recognition_count": 43
+    },
+    {
+      "id": 2,
+      "name": "Sarah",
+      "trained_at": "2025-02-20",
+      "recognition_count": 28
+    },
+    {
+      "id": 3,
+      "name": "Mike",
+      "trained_at": "2025-03-10",
+      "recognition_count": 15
+    }
   ],
   "appointments": [
-    {"id": 1, "user": "Stan", "service": "Haircut", "time": "10:00 AM", "date": "today", "barber": "Joe"},
-    {"id": 2, "user": "Sarah", "service": "Color", "time": "2:00 PM", "date": "today", "barber": "Mike"},
-    {"id": 3, "user": "Alex", "service": "Trim", "time": "4:30 PM", "date": "today", "barber": "Joe"}
+    {
+      "id": 1,
+      "user": "Stan",
+      "service": "Haircut",
+      "time": "10:00 AM",
+      "date": "today",
+      "barber": "Joe"
+    },
+    {
+      "id": 2,
+      "user": "Sarah",
+      "service": "Color",
+      "time": "2:00 PM",
+      "date": "today",
+      "barber": "Mike"
+    },
+    {
+      "id": 3,
+      "user": "Alex",
+      "service": "Trim",
+      "time": "4:30 PM",
+      "date": "today",
+      "barber": "Joe"
+    }
   ],
   "budget": {
     "weekly_goal": 2000,
@@ -15,10 +51,31 @@
     "current_week_earned": 850,
     "current_month_earned": 3200,
     "transactions": [
-      {"date": "2025-11-28", "amount": 45, "service": "Haircut", "client": "John"},
-      {"date": "2025-11-28", "amount": 120, "service": "Color & Cut", "client": "Mary"},
-      {"date": "2025-11-29", "amount": 35, "service": "Trim", "client": "Stan"}
+      {
+        "date": "2025-11-28",
+        "amount": 45,
+        "service": "Haircut",
+        "client": "John"
+      },
+      {
+        "date": "2025-11-28",
+        "amount": 120,
+        "service": "Color & Cut",
+        "client": "Mary"
+      },
+      {
+        "date": "2025-11-29",
+        "amount": 35,
+        "service": "Trim",
+        "client": "Stan"
+      }
     ]
   },
-  "recognition_log": []
+  "recognition_log": [
+    {
+      "timestamp": "2025-11-29T23:06:14.853Z",
+      "user": "Stan",
+      "confidence": 0.96
+    }
+  ]
 }
