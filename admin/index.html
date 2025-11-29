@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SmartMirror Admin - Budget Tracker</title>
+    <title>SmartMirror Admin Panel</title>
     <style>
         * {
             margin: 0;
@@ -36,20 +36,63 @@
             color: #7c3aed;
         }
 
-        .back-link {
+        .nav-links {
+            display: flex;
+            gap: 24px;
+            align-items: center;
+        }
+
+        .nav-links a {
             color: #a78bfa;
             text-decoration: none;
             font-size: 14px;
         }
 
-        .back-link:hover {
+        .nav-links a:hover {
             text-decoration: underline;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 8px;
+            padding: 20px 40px;
+            background: rgba(0, 0, 0, 0.2);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .tab {
+            padding: 10px 20px;
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #a0a0a0;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .tab:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .tab.active {
+            background: #7c3aed;
+            border-color: #7c3aed;
+            color: white;
         }
 
         .container {
             max-width: 1200px;
             margin: 0 auto;
             padding: 40px 20px;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
         }
 
         .stats-grid {
@@ -152,11 +195,27 @@
             background: rgba(255, 255, 255, 0.2);
         }
 
-        .transaction-list {
+        .btn-telegram {
+            background: #0088cc;
+        }
+
+        .btn-telegram:hover {
+            background: #006699;
+        }
+
+        .btn-danger {
+            background: #dc2626;
+        }
+
+        .btn-danger:hover {
+            background: #b91c1c;
+        }
+
+        .transaction-list, .message-list {
             list-style: none;
         }
 
-        .transaction-item {
+        .transaction-item, .message-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -164,27 +223,27 @@
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        .transaction-item:last-child {
+        .transaction-item:last-child, .message-item:last-child {
             border-bottom: none;
         }
 
-        .transaction-info {
+        .transaction-info, .message-info {
             display: flex;
             flex-direction: column;
             gap: 4px;
         }
 
-        .transaction-service {
+        .transaction-service, .message-text {
             font-weight: 500;
             font-size: 15px;
         }
 
-        .transaction-client {
+        .transaction-client, .message-sender {
             font-size: 13px;
             color: #a0a0a0;
         }
 
-        .transaction-date {
+        .transaction-date, .message-time {
             font-size: 12px;
             color: #666;
         }
@@ -206,7 +265,7 @@
             color: #a0a0a0;
         }
 
-        .form-group input {
+        .form-group input, .form-group textarea, .form-group select {
             width: 100%;
             padding: 12px 16px;
             border: 1px solid rgba(255, 255, 255, 0.2);
@@ -214,9 +273,15 @@
             background: rgba(255, 255, 255, 0.05);
             color: white;
             font-size: 14px;
+            font-family: inherit;
         }
 
-        .form-group input:focus {
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .form-group input:focus, .form-group textarea:focus {
             outline: none;
             border-color: #7c3aed;
         }
@@ -293,80 +358,252 @@
             padding: 20px;
             color: #666;
         }
+
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .action-btn {
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            color: white;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        .action-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .action-btn .icon {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        .action-btn .label {
+            font-size: 13px;
+            color: #a0a0a0;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .status-badge.success {
+            background: rgba(34, 197, 94, 0.2);
+            color: #22c55e;
+        }
+
+        .status-badge.pending {
+            background: rgba(234, 179, 8, 0.2);
+            color: #eab308;
+        }
     </style>
 </head>
 <body>
     <header class="header">
-        <h1>💰 <span>SmartMirror</span> Admin</h1>
-        <a href="/" class="back-link">← Back to Mirror</a>
+        <h1>🪞 <span>SmartMirror</span> Admin</h1>
+        <div class="nav-links">
+            <a href="/">← Back to Mirror</a>
+        </div>
     </header>
 
+    <div class="tabs">
+        <button class="tab active" onclick="switchTab('budget')">💰 Budget</button>
+        <button class="tab" onclick="switchTab('telegram')">💬 Telegram Bot</button>
+        <button class="tab" onclick="switchTab('controls')">🎛️ Mirror Controls</button>
+    </div>
+
     <div class="container">
-        <div class="stats-grid">
-            <div class="stat-card">
-                <h3>Weekly Goal Progress</h3>
-                <div class="value green" id="weeklyEarned">$0</div>
-                <div class="progress-container">
-                    <div class="progress-bar weekly" id="weeklyProgress" style="width: 0%"></div>
+        <!-- Budget Tab -->
+        <div id="budget-tab" class="tab-content active">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3>Weekly Goal Progress</h3>
+                    <div class="value green" id="weeklyEarned">$0</div>
+                    <div class="progress-container">
+                        <div class="progress-bar weekly" id="weeklyProgress" style="width: 0%"></div>
+                    </div>
+                    <div class="progress-label">
+                        <span id="weeklyPercent">0%</span>
+                        <span id="weeklyGoal">Goal: $0</span>
+                    </div>
                 </div>
-                <div class="progress-label">
-                    <span id="weeklyPercent">0%</span>
-                    <span id="weeklyGoal">Goal: $0</span>
+
+                <div class="stat-card">
+                    <h3>Monthly Goal Progress</h3>
+                    <div class="value purple" id="monthlyEarned">$0</div>
+                    <div class="progress-container">
+                        <div class="progress-bar monthly" id="monthlyProgress" style="width: 0%"></div>
+                    </div>
+                    <div class="progress-label">
+                        <span id="monthlyPercent">0%</span>
+                        <span id="monthlyGoal">Goal: $0</span>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <h3>Remaining This Week</h3>
+                    <div class="value blue" id="weeklyRemaining">$0</div>
+                    <p style="color: #666; font-size: 13px; margin-top: 8px;">to reach weekly goal</p>
                 </div>
             </div>
 
-            <div class="stat-card">
-                <h3>Monthly Goal Progress</h3>
-                <div class="value purple" id="monthlyEarned">$0</div>
-                <div class="progress-container">
-                    <div class="progress-bar monthly" id="monthlyProgress" style="width: 0%"></div>
+            <div class="section">
+                <div class="section-header">
+                    <h2>Add New Earning</h2>
                 </div>
-                <div class="progress-label">
-                    <span id="monthlyPercent">0%</span>
-                    <span id="monthlyGoal">Goal: $0</span>
-                </div>
+                <form id="addEarningForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="amount">Amount ($)</label>
+                            <input type="number" id="amount" placeholder="45" required min="1" step="0.01">
+                        </div>
+                        <div class="form-group">
+                            <label for="service">Service</label>
+                            <input type="text" id="service" placeholder="Haircut" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="client">Client Name</label>
+                            <input type="text" id="client" placeholder="John" required>
+                        </div>
+                        <div class="form-group" style="display: flex; align-items: flex-end;">
+                            <button type="submit" class="btn" style="width: 100%;">+ Add Earning</button>
+                        </div>
+                    </div>
+                </form>
             </div>
 
-            <div class="stat-card">
-                <h3>Remaining This Week</h3>
-                <div class="value blue" id="weeklyRemaining">$0</div>
-                <p style="color: #666; font-size: 13px; margin-top: 8px;">to reach weekly goal</p>
+            <div class="section">
+                <div class="section-header">
+                    <h2>Recent Transactions</h2>
+                    <button class="btn btn-secondary" onclick="openGoalsModal()">Edit Goals</button>
+                </div>
+                <ul class="transaction-list" id="transactionList">
+                    <li class="loading">Loading transactions...</li>
+                </ul>
             </div>
         </div>
 
-        <div class="section">
-            <div class="section-header">
-                <h2>Add New Earning</h2>
-            </div>
-            <form id="addEarningForm">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="amount">Amount ($)</label>
-                        <input type="number" id="amount" placeholder="45" required min="1" step="0.01">
-                    </div>
-                    <div class="form-group">
-                        <label for="service">Service</label>
-                        <input type="text" id="service" placeholder="Haircut" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="client">Client Name</label>
-                        <input type="text" id="client" placeholder="John" required>
-                    </div>
-                    <div class="form-group" style="display: flex; align-items: flex-end;">
-                        <button type="submit" class="btn" style="width: 100%;">+ Add Earning</button>
-                    </div>
+        <!-- Telegram Tab -->
+        <div id="telegram-tab" class="tab-content">
+            <div class="section">
+                <div class="section-header">
+                    <h2>Send Message to Mirror</h2>
                 </div>
-            </form>
+                <p style="color: #a0a0a0; margin-bottom: 20px; font-size: 14px;">
+                    Simulate sending a Telegram message that will appear on the mirror display.
+                </p>
+                <form id="sendMessageForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="senderName">Sender Name</label>
+                            <input type="text" id="senderName" placeholder="Customer" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="messageText">Message</label>
+                            <input type="text" id="messageText" placeholder="Your message here..." required>
+                        </div>
+                        <div class="form-group" style="display: flex; align-items: flex-end;">
+                            <button type="submit" class="btn btn-telegram" style="width: 100%;">📤 Send to Mirror</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <div class="section">
+                <div class="section-header">
+                    <h2>Quick Bot Commands</h2>
+                </div>
+                <div class="quick-actions">
+                    <button class="action-btn" onclick="sendBotCommand('book')">
+                        <div class="icon">📅</div>
+                        <div class="label">Book Appointment</div>
+                    </button>
+                    <button class="action-btn" onclick="sendBotCommand('bookings')">
+                        <div class="icon">📋</div>
+                        <div class="label">My Bookings</div>
+                    </button>
+                    <button class="action-btn" onclick="sendBotCommand('contact')">
+                        <div class="icon">📞</div>
+                        <div class="label">Contact Shop</div>
+                    </button>
+                    <button class="action-btn" onclick="sendBotCommand('hours')">
+                        <div class="icon">🕐</div>
+                        <div class="label">Shop Hours</div>
+                    </button>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-header">
+                    <h2>Message History</h2>
+                    <button class="btn btn-secondary" onclick="loadMessages()">Refresh</button>
+                </div>
+                <ul class="message-list" id="messageList">
+                    <li class="loading">Loading messages...</li>
+                </ul>
+            </div>
         </div>
 
-        <div class="section">
-            <div class="section-header">
-                <h2>Recent Transactions</h2>
-                <button class="btn btn-secondary" onclick="openGoalsModal()">Edit Goals</button>
+        <!-- Controls Tab -->
+        <div id="controls-tab" class="tab-content">
+            <div class="section">
+                <div class="section-header">
+                    <h2>Mirror Controls</h2>
+                </div>
+                <p style="color: #a0a0a0; margin-bottom: 20px; font-size: 14px;">
+                    Send commands to the SmartMirror remotely.
+                </p>
+                <div class="quick-actions">
+                    <button class="action-btn" onclick="sendMirrorCommand('detect_face')">
+                        <div class="icon">👤</div>
+                        <div class="label">Detect Face</div>
+                    </button>
+                    <button class="action-btn" onclick="sendMirrorCommand('play_greeting')">
+                        <div class="icon">🔊</div>
+                        <div class="label">Play Greeting</div>
+                    </button>
+                    <button class="action-btn" onclick="sendMirrorCommand('show_messages')">
+                        <div class="icon">💬</div>
+                        <div class="label">Show Messages</div>
+                    </button>
+                    <button class="action-btn" onclick="sendMirrorCommand('show_appointments')">
+                        <div class="icon">📅</div>
+                        <div class="label">Show Appointments</div>
+                    </button>
+                </div>
             </div>
-            <ul class="transaction-list" id="transactionList">
-                <li class="loading">Loading transactions...</li>
-            </ul>
+
+            <div class="section">
+                <div class="section-header">
+                    <h2>System Status</h2>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h3>Mirror Status</h3>
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <span class="status-badge success">Online</span>
+                            <span style="color: #666; font-size: 13px;">Connected</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Last Face Detection</h3>
+                        <div style="color: #a0a0a0; font-size: 14px;" id="lastDetection">No recent detection</div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -395,20 +632,30 @@
     <script>
         let budgetData = null;
 
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tabName + '-tab').classList.add('active');
+
+            if (tabName === 'telegram') {
+                loadMessages();
+            }
+        }
+
         async function loadBudget() {
             try {
                 const response = await fetch('/api/budget');
                 const data = await response.json();
                 budgetData = data;
-                updateUI(data);
+                updateBudgetUI(data);
             } catch (error) {
                 console.error('Failed to load budget:', error);
-                document.getElementById('transactionList').innerHTML = 
-                    '<li class="empty-state">Failed to load data. Please refresh.</li>';
             }
         }
 
-        function updateUI(data) {
+        function updateBudgetUI(data) {
             const budget = data.budget;
             const transactions = data.recent_transactions || [];
 
@@ -445,6 +692,39 @@
             }
         }
 
+        async function loadMessages() {
+            try {
+                const response = await fetch('/api/telegram/messages');
+                const data = await response.json();
+                updateMessagesUI(data.messages || []);
+            } catch (error) {
+                console.error('Failed to load messages:', error);
+            }
+        }
+
+        function updateMessagesUI(messages) {
+            const listEl = document.getElementById('messageList');
+            if (messages.length === 0) {
+                listEl.innerHTML = '<li class="empty-state">No messages yet</li>';
+            } else {
+                listEl.innerHTML = messages.map(m => `
+                    <li class="message-item">
+                        <div class="message-info">
+                            <span class="message-text">${escapeHtml(m.text)}</span>
+                            <span class="message-sender">${escapeHtml(m.sender)}</span>
+                            <span class="message-time">${new Date(m.timestamp).toLocaleString()}</span>
+                        </div>
+                    </li>
+                `).join('');
+            }
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.appendChild(document.createTextNode(text));
+            return div.innerHTML;
+        }
+
         document.getElementById('addEarningForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
@@ -469,6 +749,27 @@
             }
         });
 
+        document.getElementById('sendMessageForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const sender = document.getElementById('senderName').value;
+            const text = document.getElementById('messageText').value;
+
+            try {
+                await fetch('/api/telegram/send', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sender, text })
+                });
+                
+                document.getElementById('messageText').value = '';
+                loadMessages();
+                alert('Message sent to mirror!');
+            } catch (error) {
+                alert('Failed to send message. Please try again.');
+            }
+        });
+
         document.getElementById('goalsForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
@@ -488,6 +789,39 @@
                 alert('Failed to update goals. Please try again.');
             }
         });
+
+        async function sendBotCommand(command) {
+            const messages = {
+                'book': 'I would like to book an appointment',
+                'bookings': 'Show me my upcoming bookings',
+                'contact': 'How can I contact the shop?',
+                'hours': 'What are your shop hours?'
+            };
+            
+            try {
+                await fetch('/api/telegram/send', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sender: 'Bot Command', text: messages[command] })
+                });
+                loadMessages();
+            } catch (error) {
+                alert('Failed to send command.');
+            }
+        }
+
+        async function sendMirrorCommand(command) {
+            try {
+                await fetch('/api/mirror/command', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ command })
+                });
+                alert('Command sent: ' + command);
+            } catch (error) {
+                alert('Failed to send command.');
+            }
+        }
 
         function openGoalsModal() {
             document.getElementById('goalsModal').classList.add('active');

@@ -1,0 +1,186 @@
+✅ Current Features of the SmartMirror System
+1. Face Recognition (Python / OpenCV)
+
+Detects faces continuously using the Pi camera or USB camera.
+
+Matches faces against trained embeddings.
+
+Returns the recognized username back to MagicMirror via Node Helper.
+
+Stops after a successful match and restarts on next cycle.
+
+Can train new faces (via voice command or button trigger).
+
+Saves face embeddings/models locally.
+
+Face Recognition Behaviors
+
+Shows “Face detection in progress…” during idle.
+
+Displays “Welcome, {name}” on successful detection.
+
+Auto-hides the welcome after a few seconds.
+
+2. Personalized Voice Greeting (TTS)
+
+Uses Google Text-to-Speech (gTTS).
+
+Generates a personalized greeting MP3:
+
+“Welcome {name}”
+
+Plays audio via mpg123 through your paired Bluetooth speaker.
+
+Audio file is generated dynamically in /tmp.
+
+3. MagicMirror2 UI Module (MMM-Face-Recognition-SMAI)
+
+Displays recognition messages:
+
+Idle (scanning)
+
+Welcome message
+
+Temporary pop-up text
+
+Transitions text in/out automatically.
+
+Receives notifications from Python backend.
+
+4. Scheduled Auto-Restart & Startup Scripts
+
+SmartMirror launches via run_smartmirror.sh.
+
+Telegram bot launches automatically via cron job on boot.
+
+Python recognition service is managed entirely by Node Helper.
+
+5. Telegram Relay Display Module
+
+(Your custom MMM-TelegramRelayDisplay)
+
+Features
+
+Reads incoming Telegram messages from a log file.
+
+Displays messages on the MagicMirror in real time.
+
+UI auto-updates on interval.
+
+Log storage in /var/log/smartmirror/telegram_messages.log (persistent).
+
+Works for:
+
+text messages
+
+button press events in the bot
+
+6. Telegram Bot (Python)
+
+Your bot includes:
+
+A. Main Features
+
+Receives messages from users (customers, barbers, or you).
+
+Writes messages to the mirror log for display.
+
+Supports interactive menus (Telegram inline keyboards).
+
+B. Menu Options
+
+Book Appointment
+→ submenu loads correctly after fix
+
+My Bookings
+
+Contact Shop
+
+Send a Message to Mirror (pushes straight to the SmartMirror)
+
+Admin Commands
+
+Manually trigger face recognition
+
+Manually play greeting
+
+Restart mirror components
+
+7. Local Python Logging
+
+Logs face recognition events.
+
+Logs name matches.
+
+Logs TTS speech attempts.
+
+Logs errors cleanly to stdout for debugging.
+
+8. Google Calendar Integration
+
+Loads:
+
+U.S. holidays (iCal feed)
+
+Shop appointment calendar via your everydaybarber.tccons.com ICS feed.
+
+9. Newsfeed Integration
+
+NY Times RSS feed visible on bottom bar.
+
+10. Weather Module
+
+Uses OpenWeatherMap API.
+
+Shows current weather for Chicago.
+
+11. Voice Recognition (Python)
+
+Activated by the hotword:
+
+“Mirror mirror…”
+
+Supports:
+
+“detect face”
+
+“new face”
+
+“what time is it”
+
+“show messages”
+
+Sends commands to MagicMirror via HTTP endpoint.
+
+Uses Google STT for highly accurate transcription.
+
+12. Bluetooth Audio Integration
+
+Uses mpg123 to play TTS audio via your Anker Bluetooth speaker.
+
+Verified working via greeting logs.
+
+13. Fully Working End-to-End Pipeline
+
+Flow:
+Face → Python → MagicMirror Node Helper → UI
+Voice → STT → Python → MagicMirror Node Helper → UI
+Telegram → log file → Node Helper → UI
+
+Everything is integrated and functioning.
+
+🎯 Everything Currently Missing (Not in App Yet)
+
+To avoid confusion, here are features that are NOT implemented yet:
+
+❌ Barber financial accounting
+❌ Daily/weekly/monthly revenue tracking
+❌ Budget goal setting & tracking
+❌ Mobile-friendly admin dashboard
+❌ Scheduling UI on mirror
+❌ Admin portal (web)
+❌ Cloud sync or multi-device deployment
+❌ Multi-user profile UI themes
+❌ Hardware remote monitoring
+❌ PM2 or systemd watchdog scripts
+❌ Flite TTS engine (we currently use Google TTS only)

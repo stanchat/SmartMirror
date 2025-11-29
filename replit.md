@@ -1,7 +1,7 @@
 # SmartMirror on Replit
 
 ## Overview
-This is a **SmartMirror** application running on Replit - a web-based simulation of a smart mirror system built on MagicMirror². It provides face recognition simulation, voice command emulation, and appointment scheduling for customers, with a separate admin panel for barbers to manage their budget.
+This is a **SmartMirror** application running on Replit - a web-based simulation of a smart mirror system built on MagicMirror². It provides face recognition simulation, voice command emulation, appointment scheduling, Telegram messaging relay, calendar integration, and budget tracking for barbers.
 
 **Version:** 2.30.0 (MagicMirror² base)  
 **Language:** Node.js (v20.19.3)  
@@ -12,48 +12,74 @@ This is a **SmartMirror** application running on Replit - a web-based simulation
 ### Mirror View (`/`)
 Customer-facing smart mirror display with:
 - Clock and date
-- Face recognition simulation
-- Voice command input
-- Weather (current + forecast)
+- Face recognition simulation with voice commands
+- Calendar with US holidays
+- Weather (current + forecast) for Chicago
+- Telegram message display
 - Today's appointments
-- News feed
+- News feed (NY Times)
 
 ### Admin Panel (`/admin`)
-Barber-only budget management page with:
-- Weekly and monthly goal tracking
-- Add earnings form
-- Transaction history
-- Edit goals functionality
+Barber-only management page with three tabs:
+1. **Budget Tab:** Weekly/monthly goal tracking, add earnings, transaction history
+2. **Telegram Bot Tab:** Send messages to mirror, quick bot commands, message history
+3. **Mirror Controls Tab:** Remote control for face detection, greetings, show messages
 
 ## Features
 
-### Face Recognition Simulation
+### 1. Face Recognition Simulation
 - Simulated face detection with random recognition events
-- Dynamic "Welcome, [Name]" messages with fade-in/out animations
+- Dynamic "Welcome, [Name]" messages with animations
 - Face training for new users
 - Recognition confidence display
+- Personalized TTS greeting via Web Speech API
 
-### Voice Assistant Emulation
+### 2. Voice Assistant Emulation
 - Text input interface to simulate voice commands
 - "Mirror mirror..." wake phrase activation
-- Browser-based text-to-speech using Web Speech API
+- Browser-based text-to-speech (Web Speech API)
 - Supported commands:
-  - "Mirror mirror, detect face" - Triggers face recognition
-  - "Mirror mirror, new face" - Trains a new user
-  - "Mirror mirror, show appointments" - Displays today's schedule
-  - "Mirror mirror, what time is it" - Speaks the current time
+  - `Mirror mirror, detect face` - Triggers face recognition
+  - `Mirror mirror, new face` - Trains a new user
+  - `Mirror mirror, show messages` - Displays Telegram messages
+  - `Mirror mirror, show appointments` - Shows today's schedule
+  - `Mirror mirror, show calendar` - Displays upcoming events
+  - `Mirror mirror, weather` - Shows weather info
+  - `Mirror mirror, news` - Shows news headlines
+  - `Mirror mirror, what time is it` - Speaks the current time
+  - `Mirror mirror, what's the date` - Speaks today's date
+  - `Mirror mirror, help` - Lists available commands
 
-### Appointment Scheduler
+### 3. Telegram Relay Display
+- Real-time message display on mirror
+- Messages sent from admin panel appear on mirror
+- TTS announcement of new messages
+- Message history with sender and timestamp
+
+### 4. Calendar Integration
+- US Holidays via iCal feed
+- Upcoming events display
+
+### 5. Appointment Scheduler
 - View today's appointments
 - Book new appointments with client name, service, and time
 - Display barber assignments
 - Real-time updates
 
-### Budget Tracker (Admin Only)
+### 6. Budget Tracker (Admin Only)
 - Weekly and monthly goal tracking with progress bars
 - Add earnings with amount, service, and client
 - Transaction history
 - Edit goals functionality
+
+### 7. Weather Module
+- Current weather for Chicago
+- 5-day forecast
+- Uses Open-Meteo API (no API key required)
+
+### 8. News Feed
+- NY Times RSS feed
+- Auto-rotating headlines
 
 ## Project Architecture
 
@@ -62,11 +88,12 @@ Barber-only budget management page with:
 ├── config/
 │   └── config.js          - Main MagicMirror configuration
 ├── admin/
-│   ├── index.html         - Admin panel frontend
+│   ├── index.html         - Admin panel frontend (3 tabs)
 │   └── api.js             - Admin API routes
 ├── modules/
 │   ├── default/           - Built-in MagicMirror modules
 │   ├── MMM-Face-Recognition-SMAI/  - Face recognition module
+│   ├── MMM-TelegramRelayDisplay/   - Telegram message display
 │   └── MMM-Appointments/  - Appointment scheduler module
 ├── backend/
 │   └── data.json          - Persistent storage for all data
@@ -75,6 +102,20 @@ Barber-only budget management page with:
 ├── css/                   - Stylesheets
 └── translations/          - Language files
 ```
+
+### Custom Modules
+
+#### MMM-Face-Recognition-SMAI
+- **Purpose:** Face detection simulation + voice commands
+- **Files:** `MMM-Face-Recognition-SMAI.js`, `node_helper.js`, CSS
+
+#### MMM-TelegramRelayDisplay
+- **Purpose:** Display messages sent from Telegram/admin
+- **Files:** `MMM-TelegramRelayDisplay.js`, `node_helper.js`, CSS
+
+#### MMM-Appointments
+- **Purpose:** Show and manage appointments
+- **Files:** `MMM-Appointments.js`, `node_helper.js`, CSS
 
 ### API Endpoints
 
@@ -85,17 +126,29 @@ Barber-only budget management page with:
 | `/api/budget/goals` | POST | Update weekly/monthly goals |
 | `/api/appointments` | GET | Get appointments list |
 | `/api/appointments` | POST | Add new appointment |
+| `/api/telegram/messages` | GET | Get message history |
+| `/api/telegram/send` | POST | Send message to mirror |
+| `/api/mirror/command` | POST | Send command to mirror |
 
 ### Data Storage
 All data is persisted in `backend/data.json`:
 - **users:** Registered faces with recognition count
 - **appointments:** Scheduled appointments
 - **budget:** Weekly/monthly goals and transactions
+- **telegram_messages:** Message history
 - **recognition_log:** History of face recognitions
 
 ## Configuration
 
-### Replit-Specific Settings
+### Module Positions
+- **top_left:** Clock, Calendar (US Holidays)
+- **top_right:** Weather (current + forecast)
+- **middle_center:** Face Recognition (main interaction)
+- **bottom_left:** Telegram Messages
+- **bottom_right:** Appointments
+- **bottom_bar:** News feed
+
+### Replit Settings
 ```javascript
 {
   address: "0.0.0.0",    // Required for Replit
@@ -103,15 +156,7 @@ All data is persisted in `backend/data.json`:
   ipWhitelist: [],       // Empty to allow Replit's proxy
 }
 ```
-
-The main server runs on port 5000 and proxies to MagicMirror on port 8080.
-
-### Module Positions
-- **top_left:** Clock
-- **top_right:** Weather (current + forecast)
-- **middle_center:** Face Recognition (main interaction)
-- **bottom_right:** Appointments
-- **bottom_bar:** News feed
+Main server runs on port 5000 and proxies to MagicMirror on port 8080.
 
 ## Development
 
@@ -125,26 +170,22 @@ This starts the server at `http://0.0.0.0:5000`
 - Mirror: `http://0.0.0.0:5000/`
 - Admin: `http://0.0.0.0:5000/admin`
 
-### Adding New Users
-1. Click "Detect Face" or type "Mirror mirror, new face"
-2. Enter the user's name when prompted
-3. The system will "train" and add the new face
+### Testing Voice Commands
+1. Type a command in the voice input field (e.g., "Mirror mirror, detect face")
+2. Click Send or press Enter
+3. The mirror will respond with text and TTS audio
 
-### Booking Appointments
-1. Click "+ Book Appointment" in the Appointments module
-2. Enter client name, service type, and time
-3. Appointment appears in the list
+### Sending Messages to Mirror
+1. Go to `/admin` and click "Telegram Bot" tab
+2. Enter sender name and message
+3. Click "Send to Mirror"
+4. Message appears on the mirror display
 
 ### Adding Earnings (Admin Panel)
-1. Go to `/admin`
+1. Go to `/admin` (Budget tab)
 2. Enter amount, service, and client name
 3. Click "+ Add Earning"
 4. Progress bars update automatically
-
-### Available Scripts
-- `npm run server` - Start MagicMirror only
-- `npm run config:check` - Validate configuration file
-- `npm test` - Run test suite
 
 ## Deployment
 The project is configured for Replit deployment with:
@@ -152,26 +193,25 @@ The project is configured for Replit deployment with:
 - **Run Command:** `node server.js`
 
 ## Recent Changes
+- **2025-11-29:** Full SmartMirror Feature Implementation
+  - Added MMM-TelegramRelayDisplay module for message relay
+  - Added Calendar module with US Holidays
+  - Enhanced admin panel with 3 tabs (Budget, Telegram, Controls)
+  - Expanded voice commands (12+ commands)
+  - Added mirror remote controls
+  - Updated weather to Chicago location
+
 - **2025-11-29:** Separated Budget Tracker to Admin Panel
   - Removed budget tracker from mirror view
   - Created `/admin` page for barbers
-  - Added API endpoints for budget management
-  - Set up proxy server architecture
-
-- **2025-11-29:** SmartMirror Enhancement
-  - Added MMM-Face-Recognition-SMAI module with simulated face detection
-  - Added MMM-Appointments module for scheduling
-  - Implemented voice command simulation with text input
-  - Added Web Speech API for text-to-speech
-  - Created node_helpers for server-side data management
-  - Set up persistent JSON storage for all data
 
 ## User Preferences
 - Budget tracker should be admin/barber only (not on mirror)
+- Mirror should display: clock, calendar, face recognition, weather, messages, appointments, news
 
 ## Technical Notes
 - Face recognition is simulated (no actual camera/OpenCV)
 - Voice commands use text input (no actual microphone)
-- TTS uses browser's Web Speech API (works in Chrome, Firefox, Safari)
+- TTS uses browser's Web Speech API
 - All data persists in JSON file between sessions
 - Server proxies MagicMirror from internal port 8080 to public port 5000

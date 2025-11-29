@@ -35,6 +35,7 @@ function getDefaultData() {
             current_month_earned: 0,
             transactions: []
         },
+        telegram_messages: [],
         recognition_log: []
     };
 }
@@ -140,6 +141,55 @@ router.post('/appointments', (req, res) => {
     res.json({
         success: true,
         appointment: newAppointment
+    });
+});
+
+router.get('/telegram/messages', (req, res) => {
+    const data = loadData();
+    const messages = data.telegram_messages || [];
+    
+    res.json({
+        success: true,
+        messages: messages.slice(0, 20)
+    });
+});
+
+router.post('/telegram/send', (req, res) => {
+    const data = loadData();
+    const { sender, text } = req.body;
+    
+    const message = {
+        id: Date.now(),
+        sender: sender || 'Unknown',
+        text: text || '',
+        timestamp: new Date().toISOString(),
+        isNew: true
+    };
+    
+    data.telegram_messages = data.telegram_messages || [];
+    data.telegram_messages.unshift(message);
+    
+    if (data.telegram_messages.length > 50) {
+        data.telegram_messages = data.telegram_messages.slice(0, 50);
+    }
+    
+    saveData(data);
+    
+    res.json({
+        success: true,
+        message: message
+    });
+});
+
+router.post('/mirror/command', (req, res) => {
+    const { command } = req.body;
+    
+    console.log('Mirror command received:', command);
+    
+    res.json({
+        success: true,
+        command: command,
+        message: 'Command sent to mirror'
     });
 });
 
