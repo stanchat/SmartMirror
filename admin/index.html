@@ -409,6 +409,172 @@
             background: rgba(234, 179, 8, 0.2);
             color: #eab308;
         }
+
+        .module-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+
+        .module-card.disabled {
+            opacity: 0.5;
+        }
+
+        .module-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .module-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .module-title .icon {
+            font-size: 24px;
+        }
+
+        .module-title h3 {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .module-title p {
+            font-size: 12px;
+            color: #888;
+            margin-top: 2px;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 50px;
+            height: 26px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255, 255, 255, 0.2);
+            transition: 0.3s;
+            border-radius: 26px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+
+        .toggle-switch input:checked + .toggle-slider {
+            background-color: #22c55e;
+        }
+
+        .toggle-switch input:checked + .toggle-slider:before {
+            transform: translateX(24px);
+        }
+
+        .module-settings {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+        }
+
+        .module-settings .form-group {
+            margin-bottom: 0;
+        }
+
+        .module-settings label {
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 4px;
+        }
+
+        .module-settings input,
+        .module-settings select {
+            padding: 8px 12px;
+            font-size: 13px;
+        }
+
+        .save-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(26, 26, 46, 0.95);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 16px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            backdrop-filter: blur(10px);
+            z-index: 100;
+        }
+
+        .save-bar.hidden {
+            display: none;
+        }
+
+        .save-bar p {
+            color: #a0a0a0;
+            font-size: 14px;
+        }
+
+        .position-preview {
+            display: grid;
+            grid-template-areas: 
+                "top_bar top_bar top_bar"
+                "top_left top_center top_right"
+                "upper_third upper_third upper_third"
+                "middle_left middle_center middle_right"
+                "lower_third lower_third lower_third"
+                "bottom_left bottom_center bottom_right"
+                "bottom_bar bottom_bar bottom_bar";
+            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-rows: repeat(7, 40px);
+            gap: 4px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            padding: 8px;
+            max-width: 300px;
+            margin: 16px auto;
+        }
+
+        .position-cell {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            color: #666;
+            transition: all 0.2s;
+        }
+
+        .position-cell.active {
+            background: rgba(124, 58, 237, 0.5);
+            color: white;
+        }
     </style>
 </head>
 <body>
@@ -423,6 +589,7 @@
         <button class="tab active" onclick="switchTab('budget')">💰 Budget</button>
         <button class="tab" onclick="switchTab('telegram')">💬 Telegram Bot</button>
         <button class="tab" onclick="switchTab('controls')">🎛️ Mirror Controls</button>
+        <button class="tab" onclick="switchTab('modules')">🧩 Modules</button>
     </div>
 
     <div class="container">
@@ -686,6 +853,52 @@
                     </div>
                 </div>
             </div>
+        </div>
+
+        <!-- Modules Tab -->
+        <div id="modules-tab" class="tab-content">
+            <div class="section">
+                <div class="section-header">
+                    <h2>Mirror Layout</h2>
+                </div>
+                <p style="color: #a0a0a0; margin-bottom: 20px; font-size: 14px;">
+                    Choose which modules to show on your mirror and where to position them. Changes are saved automatically.
+                </p>
+                
+                <div id="modulesContainer">
+                    <div class="loading">Loading module configuration...</div>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-header">
+                    <h2>Position Guide</h2>
+                </div>
+                <p style="color: #a0a0a0; margin-bottom: 12px; font-size: 13px; text-align: center;">
+                    This is how positions appear on your mirror:
+                </p>
+                <div class="position-preview">
+                    <div class="position-cell" style="grid-area: top_bar;">top_bar</div>
+                    <div class="position-cell" style="grid-area: top_left;">top_left</div>
+                    <div class="position-cell" style="grid-area: top_center;">top_center</div>
+                    <div class="position-cell" style="grid-area: top_right;">top_right</div>
+                    <div class="position-cell" style="grid-area: upper_third;">upper_third</div>
+                    <div class="position-cell" style="grid-area: middle_center;">middle_center</div>
+                    <div class="position-cell" style="grid-area: lower_third;">lower_third</div>
+                    <div class="position-cell" style="grid-area: bottom_left;">bottom_left</div>
+                    <div class="position-cell" style="grid-area: bottom_center;">bottom_center</div>
+                    <div class="position-cell" style="grid-area: bottom_right;">bottom_right</div>
+                    <div class="position-cell" style="grid-area: bottom_bar;">bottom_bar</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="save-bar hidden" id="saveBar">
+        <p>You have unsaved changes</p>
+        <div style="display: flex; gap: 12px;">
+            <button class="btn btn-secondary" onclick="cancelModuleChanges()">Cancel</button>
+            <button class="btn" onclick="saveModuleConfig()">Save & Apply</button>
         </div>
     </div>
 
@@ -1091,6 +1304,233 @@
         loadRegisteredUsers = async function() {
             await origLoadRegisteredUsers();
             await populateCustomerDropdown();
+        };
+
+        let moduleConfig = null;
+        let originalModuleConfig = null;
+        const positions = [
+            'top_bar', 'top_left', 'top_center', 'top_right',
+            'upper_third', 'middle_center', 'lower_third',
+            'bottom_left', 'bottom_center', 'bottom_right', 'bottom_bar'
+        ];
+
+        const moduleDefinitions = {
+            clock: {
+                icon: '🕐',
+                title: 'Clock',
+                description: 'Display time and date',
+                fields: [
+                    { key: 'showDate', label: 'Show Date', type: 'checkbox' },
+                    { key: 'dateFormat', label: 'Date Format', type: 'text', placeholder: 'dddd, MMMM D, YYYY' }
+                ]
+            },
+            calendar: {
+                icon: '📅',
+                title: 'Calendar',
+                description: 'Show upcoming events',
+                fields: [
+                    { key: 'calendarUrl', label: 'Calendar URL (iCal)', type: 'text', placeholder: 'https://...' },
+                    { key: 'calendarName', label: 'Calendar Name', type: 'text', placeholder: 'US Holidays' },
+                    { key: 'maxEntries', label: 'Max Events', type: 'number', min: 1, max: 20 }
+                ]
+            },
+            weather: {
+                icon: '🌤️',
+                title: 'Weather',
+                description: 'Current weather and forecast',
+                fields: [
+                    { key: 'location', label: 'City Name', type: 'text', placeholder: 'Chicago' },
+                    { key: 'lat', label: 'Latitude', type: 'number', step: 0.0001 },
+                    { key: 'lon', label: 'Longitude', type: 'number', step: 0.0001 },
+                    { key: 'showForecast', label: 'Show Forecast', type: 'checkbox' }
+                ]
+            },
+            faceRecognition: {
+                icon: '👤',
+                title: 'Face Recognition',
+                description: 'Recognize customers and voice commands',
+                fields: [
+                    { key: 'showVoiceInput', label: 'Show Voice Input', type: 'checkbox' },
+                    { key: 'autoScan', label: 'Auto-scan Faces', type: 'checkbox' }
+                ]
+            },
+            telegram: {
+                icon: '💬',
+                title: 'Telegram Messages',
+                description: 'Display messages from Telegram',
+                fields: [
+                    { key: 'maxMessages', label: 'Max Messages', type: 'number', min: 1, max: 10 }
+                ]
+            },
+            appointments: {
+                icon: '📋',
+                title: 'Appointments',
+                description: 'Show today\'s appointments',
+                fields: [
+                    { key: 'maxAppointments', label: 'Max Appointments', type: 'number', min: 1, max: 10 },
+                    { key: 'showAddButton', label: 'Show Add Button', type: 'checkbox' }
+                ]
+            },
+            newsfeed: {
+                icon: '📰',
+                title: 'News Feed',
+                description: 'Display news headlines',
+                fields: [
+                    { key: 'feedUrl', label: 'RSS Feed URL', type: 'text', placeholder: 'https://...' },
+                    { key: 'feedTitle', label: 'Feed Title', type: 'text', placeholder: 'New York Times' }
+                ]
+            }
+        };
+
+        async function loadModuleConfig() {
+            try {
+                const response = await fetch('/api/modules');
+                const data = await response.json();
+                moduleConfig = data.modules;
+                originalModuleConfig = JSON.parse(JSON.stringify(moduleConfig));
+                renderModules();
+            } catch (error) {
+                console.error('Failed to load module config:', error);
+                document.getElementById('modulesContainer').innerHTML = 
+                    '<div class="empty-state">Failed to load module configuration</div>';
+            }
+        }
+
+        function renderModules() {
+            const container = document.getElementById('modulesContainer');
+            let html = '';
+
+            for (const [key, def] of Object.entries(moduleDefinitions)) {
+                const config = moduleConfig[key] || { enabled: false };
+                const isEnabled = config.enabled;
+
+                html += `
+                    <div class="module-card ${!isEnabled ? 'disabled' : ''}" data-module="${key}">
+                        <div class="module-header">
+                            <div class="module-title">
+                                <span class="icon">${def.icon}</span>
+                                <div>
+                                    <h3>${def.title}</h3>
+                                    <p>${def.description}</p>
+                                </div>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" ${isEnabled ? 'checked' : ''} onchange="toggleModule('${key}', this.checked)">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="module-settings" style="${!isEnabled ? 'opacity: 0.5; pointer-events: none;' : ''}">
+                            <div class="form-group">
+                                <label>Position</label>
+                                <select onchange="updateModuleField('${key}', 'position', this.value)">
+                                    ${positions.map(p => `<option value="${p}" ${config.position === p ? 'selected' : ''}>${p.replace('_', ' ')}</option>`).join('')}
+                                </select>
+                            </div>
+                            ${def.fields.map(field => renderField(key, field, config)).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            container.innerHTML = html;
+        }
+
+        function renderField(moduleKey, field, config) {
+            const value = config[field.key];
+            
+            if (field.type === 'checkbox') {
+                return `
+                    <div class="form-group">
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="checkbox" ${value ? 'checked' : ''} 
+                                onchange="updateModuleField('${moduleKey}', '${field.key}', this.checked)"
+                                style="width: auto;">
+                            ${field.label}
+                        </label>
+                    </div>
+                `;
+            } else if (field.type === 'number') {
+                return `
+                    <div class="form-group">
+                        <label>${field.label}</label>
+                        <input type="number" value="${value || ''}" 
+                            ${field.min !== undefined ? `min="${field.min}"` : ''}
+                            ${field.max !== undefined ? `max="${field.max}"` : ''}
+                            ${field.step !== undefined ? `step="${field.step}"` : ''}
+                            onchange="updateModuleField('${moduleKey}', '${field.key}', parseFloat(this.value))">
+                    </div>
+                `;
+            } else {
+                return `
+                    <div class="form-group">
+                        <label>${field.label}</label>
+                        <input type="text" value="${value || ''}" 
+                            placeholder="${field.placeholder || ''}"
+                            onchange="updateModuleField('${moduleKey}', '${field.key}', this.value)">
+                    </div>
+                `;
+            }
+        }
+
+        function toggleModule(moduleKey, enabled) {
+            if (!moduleConfig[moduleKey]) {
+                moduleConfig[moduleKey] = { enabled: false, position: 'top_left' };
+            }
+            moduleConfig[moduleKey].enabled = enabled;
+            renderModules();
+            showSaveBar();
+        }
+
+        function updateModuleField(moduleKey, field, value) {
+            if (!moduleConfig[moduleKey]) {
+                moduleConfig[moduleKey] = { enabled: true, position: 'top_left' };
+            }
+            moduleConfig[moduleKey][field] = value;
+            showSaveBar();
+        }
+
+        function showSaveBar() {
+            document.getElementById('saveBar').classList.remove('hidden');
+        }
+
+        function hideSaveBar() {
+            document.getElementById('saveBar').classList.add('hidden');
+        }
+
+        function cancelModuleChanges() {
+            moduleConfig = JSON.parse(JSON.stringify(originalModuleConfig));
+            renderModules();
+            hideSaveBar();
+        }
+
+        async function saveModuleConfig() {
+            try {
+                const response = await fetch('/api/modules', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ modules: moduleConfig })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    originalModuleConfig = JSON.parse(JSON.stringify(moduleConfig));
+                    hideSaveBar();
+                    alert('Configuration saved! The mirror will refresh to apply changes.');
+                } else {
+                    alert('Failed to save: ' + (data.message || 'Unknown error'));
+                }
+            } catch (error) {
+                alert('Failed to save configuration. Please try again.');
+            }
+        }
+
+        const origSwitchTab = switchTab;
+        switchTab = function(tabName) {
+            origSwitchTab(tabName);
+            if (tabName === 'modules') {
+                loadModuleConfig();
+            }
         };
 
         loadBudget();

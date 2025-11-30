@@ -426,4 +426,263 @@ router.delete('/users/:id', (req, res) => {
     });
 });
 
+const configFile = path.join(__dirname, '../config/config.js');
+
+function getDefaultModuleConfig() {
+    return {
+        clock: {
+            enabled: true,
+            position: 'top_left',
+            showDate: true,
+            dateFormat: 'dddd, MMMM D, YYYY'
+        },
+        calendar: {
+            enabled: true,
+            position: 'top_left',
+            calendarUrl: 'https://www.calendarlabs.com/ical-calendar/ics/76/US_Holidays.ics',
+            calendarName: 'US Holidays',
+            maxEntries: 5
+        },
+        weather: {
+            enabled: true,
+            position: 'top_right',
+            showForecast: true,
+            location: 'Chicago',
+            lat: 41.8781,
+            lon: -87.6298
+        },
+        faceRecognition: {
+            enabled: true,
+            position: 'middle_center',
+            showVoiceInput: true,
+            autoScan: false
+        },
+        telegram: {
+            enabled: true,
+            position: 'bottom_left',
+            maxMessages: 4
+        },
+        appointments: {
+            enabled: true,
+            position: 'bottom_right',
+            maxAppointments: 5,
+            showAddButton: true
+        },
+        newsfeed: {
+            enabled: true,
+            position: 'bottom_bar',
+            feedUrl: 'https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml',
+            feedTitle: 'New York Times'
+        }
+    };
+}
+
+router.get('/modules', (req, res) => {
+    const data = loadData();
+    const moduleConfig = data.moduleConfig || getDefaultModuleConfig();
+    
+    res.json({
+        success: true,
+        modules: moduleConfig,
+        positions: [
+            'top_bar', 'top_left', 'top_center', 'top_right',
+            'upper_third', 'middle_center', 'lower_third',
+            'bottom_left', 'bottom_center', 'bottom_right', 'bottom_bar'
+        ]
+    });
+});
+
+router.post('/modules', (req, res) => {
+    const data = loadData();
+    const { modules } = req.body;
+    
+    if (!modules) {
+        return res.json({ success: false, message: 'No module configuration provided' });
+    }
+    
+    data.moduleConfig = modules;
+    saveData(data);
+    
+    generateConfigFile(modules);
+    
+    res.json({
+        success: true,
+        message: 'Module configuration saved. Refresh the mirror to apply changes.'
+    });
+});
+
+function generateConfigFile(moduleConfig) {
+    const modules = [];
+    
+    modules.push(`{
+                        module: "alert",
+                }`);
+    
+    if (moduleConfig.clock?.enabled) {
+        modules.push(`{
+                        module: "clock",
+                        position: "${moduleConfig.clock.position || 'top_left'}",
+                        config: {
+                                showDate: ${moduleConfig.clock.showDate !== false},
+                                showWeek: false,
+                                dateFormat: "${moduleConfig.clock.dateFormat || 'dddd, MMMM D, YYYY'}"
+                        }
+                }`);
+    }
+    
+    if (moduleConfig.calendar?.enabled) {
+        modules.push(`{
+                        module: "calendar",
+                        header: "Upcoming Events",
+                        position: "${moduleConfig.calendar.position || 'top_left'}",
+                        config: {
+                                calendars: [
+                                        {
+                                                symbol: "flag-usa",
+                                                url: "${moduleConfig.calendar.calendarUrl || 'https://www.calendarlabs.com/ical-calendar/ics/76/US_Holidays.ics'}",
+                                                name: "${moduleConfig.calendar.calendarName || 'US Holidays'}"
+                                        }
+                                ],
+                                maximumEntries: ${moduleConfig.calendar.maxEntries || 5},
+                                showLocation: false,
+                                wrapEvents: true,
+                                fetchInterval: 300000
+                        }
+                }`);
+    }
+    
+    if (moduleConfig.faceRecognition?.enabled) {
+        modules.push(`{
+                        module: "MMM-Face-Recognition-SMAI",
+                        position: "${moduleConfig.faceRecognition.position || 'middle_center'}",
+                        config: {
+                                showVoiceInput: ${moduleConfig.faceRecognition.showVoiceInput !== false},
+                                autoScan: ${moduleConfig.faceRecognition.autoScan === true},
+                                welcomeDuration: 6000,
+                                animationSpeed: 500
+                        }
+                }`);
+    }
+    
+    if (moduleConfig.weather?.enabled) {
+        const lat = moduleConfig.weather.lat || 41.8781;
+        const lon = moduleConfig.weather.lon || -87.6298;
+        
+        modules.push(`{
+                        module: "weather",
+                        position: "${moduleConfig.weather.position || 'top_right'}",
+                        config: {
+                                weatherProvider: "openmeteo",
+                                type: "current",
+                                lat: ${lat},
+                                lon: ${lon}
+                        }
+                }`);
+        
+        if (moduleConfig.weather.showForecast !== false) {
+            modules.push(`{
+                        module: "weather",
+                        position: "${moduleConfig.weather.position || 'top_right'}",
+                        header: "Weather Forecast",
+                        config: {
+                                weatherProvider: "openmeteo",
+                                type: "forecast",
+                                lat: ${lat},
+                                lon: ${lon}
+                        }
+                }`);
+        }
+    }
+    
+    if (moduleConfig.telegram?.enabled) {
+        modules.push(`{
+                        module: "MMM-TelegramRelayDisplay",
+                        position: "${moduleConfig.telegram.position || 'bottom_left'}",
+                        header: "",
+                        config: {
+                                maxMessages: ${moduleConfig.telegram.maxMessages || 4},
+                                displayDuration: 10000,
+                                updateInterval: 5000,
+                                showTimestamp: true,
+                                showSender: true
+                        }
+                }`);
+    }
+    
+    if (moduleConfig.appointments?.enabled) {
+        modules.push(`{
+                        module: "MMM-Appointments",
+                        position: "${moduleConfig.appointments.position || 'bottom_right'}",
+                        header: "",
+                        config: {
+                                updateInterval: 60000,
+                                maxAppointments: ${moduleConfig.appointments.maxAppointments || 5},
+                                showAddButton: ${moduleConfig.appointments.showAddButton !== false}
+                        }
+                }`);
+    }
+    
+    if (moduleConfig.newsfeed?.enabled) {
+        modules.push(`{
+                        module: "newsfeed",
+                        position: "${moduleConfig.newsfeed.position || 'bottom_bar'}",
+                        config: {
+                                feeds: [
+                                        {
+                                                title: "${moduleConfig.newsfeed.feedTitle || 'New York Times'}",
+                                                url: "${moduleConfig.newsfeed.feedUrl || 'https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml'}"
+                                        }
+                                ],
+                                showSourceTitle: true,
+                                showPublishDate: true,
+                                broadcastNewsFeeds: true,
+                                broadcastNewsUpdates: true,
+                                showDescription: false
+                        }
+                }`);
+    }
+    
+    const configContent = `/* SmartMirror Configuration
+ *
+ * Full-featured SmartMirror with face recognition, voice commands,
+ * calendar integration, Telegram messaging, and appointments.
+ * Budget Tracker is available on the separate admin page at /admin
+ *
+ * This file is auto-generated by the admin panel.
+ * Last updated: ${new Date().toISOString()}
+ */
+let config = {
+        address: "0.0.0.0",
+        port: 8080,
+        basePath: "/",
+        ipWhitelist: [],
+
+        useHttps: false,
+        httpsPrivateKey: "",
+        httpsCertificate: "",
+
+        language: "en",
+        locale: "en-US",
+
+        logLevel: ["INFO", "LOG", "WARN", "ERROR"],
+        timeFormat: 12,
+        units: "imperial",
+
+        modules: [
+                ${modules.join(',\n\t\t')}
+        ]
+};
+
+/*************** DO NOT EDIT THE LINE BELOW ***************/
+if (typeof module !== "undefined") { module.exports = config; }
+`;
+    
+    try {
+        fs.writeFileSync(configFile, configContent);
+        console.log('Config file regenerated successfully');
+    } catch (err) {
+        console.error('Error writing config file:', err);
+    }
+}
+
 module.exports = router;
