@@ -148,16 +148,37 @@ def get_service_menu():
 
 def get_time_slots_menu():
     """Return available time slots."""
-    slots = ["9:00 AM", "10:00 AM", "11:00 AM", "12:00 PM", 
-             "1:00 PM", "2:00 PM", "3:00 PM", "4:00 PM", "5:00 PM"]
+    slots = [
+        ("9:00 AM", "slot_0900"),
+        ("10:00 AM", "slot_1000"),
+        ("11:00 AM", "slot_1100"),
+        ("12:00 PM", "slot_1200"),
+        ("1:00 PM", "slot_1300"),
+        ("2:00 PM", "slot_1400"),
+        ("3:00 PM", "slot_1500"),
+        ("4:00 PM", "slot_1600"),
+        ("5:00 PM", "slot_1700")
+    ]
     keyboard = []
     for i in range(0, len(slots), 2):
-        row = [InlineKeyboardButton(slots[i], callback_data=f"time_{slots[i].replace(' ', '_').replace(':', '')}")]
+        row = [InlineKeyboardButton(slots[i][0], callback_data=slots[i][1])]
         if i + 1 < len(slots):
-            row.append(InlineKeyboardButton(slots[i+1], callback_data=f"time_{slots[i+1].replace(' ', '_').replace(':', '')}"))
+            row.append(InlineKeyboardButton(slots[i+1][0], callback_data=slots[i+1][1]))
         keyboard.append(row)
     keyboard.append([InlineKeyboardButton("🔙 Back", callback_data="appointments")])
     return InlineKeyboardMarkup(keyboard)
+
+SLOT_TO_TIME = {
+    "slot_0900": "9:00 AM",
+    "slot_1000": "10:00 AM",
+    "slot_1100": "11:00 AM",
+    "slot_1200": "12:00 PM",
+    "slot_1300": "1:00 PM",
+    "slot_1400": "2:00 PM",
+    "slot_1500": "3:00 PM",
+    "slot_1600": "4:00 PM",
+    "slot_1700": "5:00 PM"
+}
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle /start command - show main menu."""
@@ -367,11 +388,8 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             parse_mode="Markdown"
         )
     
-    elif data.startswith("time_"):
-        time_str = data.replace("time_", "").replace("_", " ").replace("AM", " AM").replace("PM", " PM")
-        time_str = time_str.replace("  ", " ").strip()
-        if "00" in time_str and ":" not in time_str:
-            time_str = time_str[:len(time_str)-4] + ":" + time_str[len(time_str)-4:]
+    elif data.startswith("slot_"):
+        time_str = SLOT_TO_TIME.get(data, "TBD")
         
         context.user_data["booking_time"] = time_str
         context.user_data["awaiting"] = "booking_name"
@@ -507,9 +525,22 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         app_data = load_data()
         today = datetime.now().strftime("%Y-%m-%d")
         
+        existing = [a for a in app_data.get("appointments", []) 
+                   if a.get("date") == today and a.get("time") == time_slot]
+        if existing:
+            keyboard = [[InlineKeyboardButton("🔙 Try Again", callback_data="book_appointment")]]
+            await update.message.reply_text(
+                f"⚠️ *Time Slot Taken*\n\nSorry, {time_slot} is already booked.\nPlease select a different time.",
+                reply_markup=InlineKeyboardMarkup(keyboard),
+                parse_mode="Markdown"
+            )
+            context.user_data["awaiting"] = None
+            return
+        
         new_appointment = {
             "id": int(datetime.now().timestamp() * 1000),
             "user": customer_name,
+            "client": customer_name,
             "service": service,
             "time": time_slot,
             "date": today,
