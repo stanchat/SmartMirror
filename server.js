@@ -18,6 +18,23 @@ app.get('/admin', (req, res) => {
     res.sendFile(path.join(__dirname, 'admin', 'index.html'));
 });
 
+console.log('Starting Telegram Bot...');
+const telegramBot = spawn('python', ['backend/telegram_bot.py'], {
+    cwd: __dirname,
+    env: process.env,
+    stdio: 'inherit'
+});
+
+telegramBot.on('error', (err) => {
+    console.error('Failed to start Telegram bot:', err);
+});
+
+telegramBot.on('exit', (code) => {
+    if (code !== 0) {
+        console.error('Telegram bot exited with code:', code);
+    }
+});
+
 console.log('Starting MagicMirror on port', MM_PORT, '...');
 const mm = spawn('npm', ['run', 'server', '--', '--port', MM_PORT.toString()], {
     cwd: __dirname,
@@ -43,11 +60,13 @@ setTimeout(() => {
 }, 3000);
 
 process.on('SIGTERM', () => {
+    telegramBot.kill();
     mm.kill();
     process.exit(0);
 });
 
 process.on('SIGINT', () => {
+    telegramBot.kill();
     mm.kill();
     process.exit(0);
 });
