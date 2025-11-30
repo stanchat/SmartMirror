@@ -479,7 +479,13 @@ function getDefaultModuleConfig() {
 
 router.get('/modules', (req, res) => {
     const data = loadData();
-    const moduleConfig = data.moduleConfig || getDefaultModuleConfig();
+    const defaults = getDefaultModuleConfig();
+    const saved = data.moduleConfig || {};
+    
+    const moduleConfig = {};
+    for (const key in defaults) {
+        moduleConfig[key] = { ...defaults[key], ...saved[key] };
+    }
     
     res.json({
         success: true,
@@ -587,6 +593,7 @@ function generateConfigFile(moduleConfig) {
                         config: {
                                 weatherProvider: "openmeteo",
                                 type: "forecast",
+                                maxNumberOfDays: 5,
                                 lat: ${lat},
                                 lon: ${lon}
                         }

@@ -217,6 +217,14 @@ The project is configured for Replit deployment with:
 - **Run Command:** `node server.js`
 
 ## Recent Changes
+- **2025-11-30:** Module Configuration UI
+  - Added "Modules" tab to admin panel for non-technical users
+  - Toggle switches to enable/disable each module
+  - Position dropdowns (top_left, bottom_right, etc.)
+  - Module-specific settings (weather location, calendar URL, etc.)
+  - Save & Apply generates new config.js automatically
+  - Visual position guide showing mirror layout
+
 - **2025-11-30:** Local Face Recognition with face-api.js
   - Integrated face-api.js for 100% local face recognition (no cloud waiting)
   - Face descriptors (128-point arrays) stored with customer profiles
