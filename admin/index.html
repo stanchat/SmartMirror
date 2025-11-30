@@ -170,6 +170,27 @@
             font-size: 18px;
             font-weight: 600;
         }
+        
+        .section-description {
+            color: #a0a0a0;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        
+        .section-highlight {
+            border: 2px solid #7c3aed;
+        }
+        
+        .section-highlight-green {
+            border: 2px solid #22c55e;
+        }
+        
+        .section-description-sm {
+            color: #a0a0a0;
+            margin-bottom: 12px;
+            font-size: 13px;
+            text-align: center;
+        }
 
         .btn {
             background: #7c3aed;
@@ -209,6 +230,22 @@
 
         .btn-danger:hover {
             background: #b91c1c;
+        }
+        
+        .btn-gradient-purple {
+            background: linear-gradient(90deg, #7c3aed, #a855f7);
+        }
+        
+        .btn-gradient-purple:hover {
+            background: linear-gradient(90deg, #6d28d9, #9333ea);
+        }
+        
+        .btn-gradient-green {
+            background: linear-gradient(90deg, #22c55e, #16a34a);
+        }
+        
+        .btn-gradient-green:hover {
+            background: linear-gradient(90deg, #16a34a, #15803d);
         }
 
         .transaction-list, .message-list {
@@ -290,6 +327,15 @@
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 16px;
+        }
+        
+        .form-group-btn {
+            display: flex;
+            align-items: flex-end;
+        }
+        
+        .form-group-btn .btn {
+            width: 100%;
         }
 
         .modal {
@@ -539,6 +585,15 @@
             color: #a0a0a0;
             font-size: 14px;
         }
+        
+        .save-bar-buttons {
+            display: flex;
+            gap: 12px;
+        }
+        
+        .save-bar-buttons .btn {
+            width: auto;
+        }
 
         .position-preview {
             display: grid;
@@ -574,6 +629,340 @@
         .position-cell.active {
             background: rgba(124, 58, 237, 0.5);
             color: white;
+        }
+
+        /* ========== RESPONSIVE DESIGN ========== */
+        
+        /* Tablet breakpoint (1024px and below) */
+        @media (max-width: 1024px) {
+            .container {
+                padding: 24px 16px;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+                gap: 16px;
+            }
+            
+            .stat-card .value {
+                font-size: 28px;
+            }
+            
+            .quick-actions {
+                grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+                gap: 12px;
+            }
+            
+            .module-settings {
+                grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            }
+            
+            .position-preview {
+                max-width: 100%;
+            }
+        }
+        
+        /* Mobile breakpoint (768px and below) */
+        @media (max-width: 768px) {
+            .header {
+                padding: 16px 20px;
+                flex-direction: column;
+                gap: 12px;
+            }
+            
+            .header h1 {
+                font-size: 20px;
+            }
+            
+            .nav-links {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            /* Scrollable tabs */
+            .tabs {
+                padding: 12px 16px;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none;
+                -ms-overflow-style: none;
+            }
+            
+            .tabs::-webkit-scrollbar {
+                display: none;
+            }
+            
+            .tab {
+                padding: 12px 16px;
+                min-height: 44px;
+                white-space: nowrap;
+                flex-shrink: 0;
+                font-size: 13px;
+            }
+            
+            .container {
+                padding: 20px 16px;
+                padding-bottom: 100px; /* Space for save bar */
+            }
+            
+            /* Single column stats */
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+                margin-bottom: 24px;
+            }
+            
+            .stat-card {
+                padding: 20px;
+            }
+            
+            .stat-card .value {
+                font-size: 32px;
+            }
+            
+            .section {
+                padding: 16px;
+                margin-bottom: 16px;
+            }
+            
+            .section-header {
+                flex-direction: column;
+                gap: 12px;
+                align-items: flex-start;
+            }
+            
+            .section-header .btn {
+                width: 100%;
+            }
+            
+            /* Form rows stack on mobile */
+            .form-row {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+            
+            .form-group input,
+            .form-group textarea,
+            .form-group select {
+                min-height: 44px;
+                font-size: 16px; /* Prevents iOS zoom */
+            }
+            
+            /* Touch-friendly buttons */
+            .btn {
+                min-height: 44px;
+                padding: 12px 20px;
+                font-size: 15px;
+                width: 100%;
+            }
+            
+            .btn-secondary {
+                width: auto;
+            }
+            
+            /* Quick actions 2 columns on mobile */
+            .quick-actions {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+            }
+            
+            .action-btn {
+                padding: 16px 12px;
+                min-height: 80px;
+            }
+            
+            .action-btn .icon {
+                font-size: 24px;
+                margin-bottom: 6px;
+            }
+            
+            .action-btn .label {
+                font-size: 12px;
+            }
+            
+            /* Transaction/message items */
+            .transaction-item,
+            .message-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+                padding: 12px 0;
+            }
+            
+            .transaction-amount {
+                font-size: 16px;
+            }
+            
+            /* Goals modal */
+            .modal-content {
+                margin: 16px;
+                padding: 24px 20px;
+                max-height: 90vh;
+                overflow-y: auto;
+            }
+            
+            .goals-form {
+                grid-template-columns: 1fr;
+            }
+            
+            /* Module cards */
+            .module-card {
+                padding: 16px;
+            }
+            
+            .module-header {
+                flex-wrap: wrap;
+                gap: 12px;
+            }
+            
+            .module-title {
+                flex: 1;
+                min-width: 200px;
+            }
+            
+            .module-title .icon {
+                font-size: 20px;
+            }
+            
+            .module-title h3 {
+                font-size: 15px;
+            }
+            
+            .module-settings {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+            
+            .module-settings .form-group input,
+            .module-settings .form-group select {
+                padding: 10px 12px;
+                font-size: 14px;
+                min-height: 44px;
+            }
+            
+            /* Toggle switch touch area */
+            .toggle-switch {
+                width: 54px;
+                height: 30px;
+            }
+            
+            .toggle-slider:before {
+                height: 24px;
+                width: 24px;
+            }
+            
+            .toggle-switch input:checked + .toggle-slider:before {
+                transform: translateX(24px);
+            }
+            
+            /* Save bar */
+            .save-bar {
+                padding: 12px 16px;
+                flex-direction: column;
+                gap: 12px;
+            }
+            
+            .save-bar p {
+                text-align: center;
+            }
+            
+            .save-bar-buttons {
+                display: flex;
+                gap: 8px;
+                width: 100%;
+            }
+            
+            .save-bar-buttons .btn {
+                flex: 1;
+                width: auto;
+            }
+            
+            /* Position preview */
+            .position-preview {
+                grid-template-rows: repeat(7, 32px);
+                max-width: 100%;
+                margin: 12px 0;
+            }
+            
+            .position-cell {
+                font-size: 8px;
+            }
+            
+            /* Delete button in user list */
+            .message-item .btn-danger {
+                width: 100%;
+                margin-top: 8px;
+            }
+        }
+        
+        /* Small phone breakpoint (480px and below) */
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 18px;
+            }
+            
+            .tab {
+                padding: 10px 14px;
+                font-size: 12px;
+            }
+            
+            .stat-card .value {
+                font-size: 28px;
+            }
+            
+            .quick-actions {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .action-btn {
+                padding: 12px 8px;
+                min-height: 70px;
+            }
+            
+            .action-btn .icon {
+                font-size: 20px;
+            }
+            
+            .section h2 {
+                font-size: 16px;
+            }
+            
+            .module-title {
+                min-width: 150px;
+            }
+            
+            .empty-state {
+                padding: 24px 16px;
+                font-size: 14px;
+            }
+        }
+        
+        /* Landscape phone */
+        @media (max-width: 768px) and (orientation: landscape) {
+            .modal-content {
+                max-height: 80vh;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+        
+        /* High DPI / touch device improvements */
+        @media (hover: none) and (pointer: coarse) {
+            .tab:hover,
+            .action-btn:hover,
+            .btn:hover {
+                transform: none;
+            }
+            
+            .action-btn:active {
+                background: rgba(255, 255, 255, 0.15);
+            }
+            
+            .btn:active {
+                opacity: 0.8;
+            }
         }
     </style>
 </head>
@@ -645,8 +1034,8 @@
                             <label for="client">Client Name</label>
                             <input type="text" id="client" placeholder="John" required>
                         </div>
-                        <div class="form-group" style="display: flex; align-items: flex-end;">
-                            <button type="submit" class="btn" style="width: 100%;">+ Add Earning</button>
+                        <div class="form-group form-group-btn">
+                            <button type="submit" class="btn">+ Add Earning</button>
                         </div>
                     </div>
                 </form>
@@ -669,7 +1058,7 @@
                 <div class="section-header">
                     <h2>Send Message to Mirror</h2>
                 </div>
-                <p style="color: #a0a0a0; margin-bottom: 20px; font-size: 14px;">
+                <p class="section-description">
                     Simulate sending a Telegram message that will appear on the mirror display.
                 </p>
                 <form id="sendMessageForm">
@@ -682,8 +1071,8 @@
                             <label for="messageText">Message</label>
                             <input type="text" id="messageText" placeholder="Your message here..." required>
                         </div>
-                        <div class="form-group" style="display: flex; align-items: flex-end;">
-                            <button type="submit" class="btn btn-telegram" style="width: 100%;">📤 Send to Mirror</button>
+                        <div class="form-group form-group-btn">
+                            <button type="submit" class="btn btn-telegram">Send to Mirror</button>
                         </div>
                     </div>
                 </form>
@@ -726,11 +1115,11 @@
 
         <!-- Controls Tab -->
         <div id="controls-tab" class="tab-content">
-            <div class="section" style="border: 2px solid #7c3aed;">
+            <div class="section section-highlight">
                 <div class="section-header">
                     <h2>Register Customer</h2>
                 </div>
-                <p style="color: #a0a0a0; margin-bottom: 20px; font-size: 14px;">
+                <p class="section-description">
                     Register a new customer's face when they sit in the chair. The mirror will capture their face.
                 </p>
                 <form id="registerCustomerForm">
@@ -739,10 +1128,8 @@
                             <label for="customerName">Customer Name</label>
                             <input type="text" id="customerName" placeholder="John" required>
                         </div>
-                        <div class="form-group" style="display: flex; align-items: flex-end;">
-                            <button type="submit" class="btn" style="width: 100%; background: linear-gradient(90deg, #7c3aed, #a855f7);">
-                                📷 Capture & Register
-                            </button>
+                        <div class="form-group form-group-btn">
+                            <button type="submit" class="btn btn-gradient-purple">Capture & Register</button>
                         </div>
                     </div>
                 </form>
@@ -759,11 +1146,11 @@
                 </ul>
             </div>
 
-            <div class="section" style="border: 2px solid #22c55e;">
+            <div class="section section-highlight-green">
                 <div class="section-header">
                     <h2>Log Service</h2>
                 </div>
-                <p style="color: #a0a0a0; margin-bottom: 20px; font-size: 14px;">
+                <p class="section-description">
                     Record what service you provided to a customer. This helps track their history for future visits.
                 </p>
                 <form id="logServiceForm">
@@ -798,9 +1185,8 @@
                             <label for="serviceNotes">Notes (optional)</label>
                             <input type="text" id="serviceNotes" placeholder="e.g., Asked for shorter on sides">
                         </div>
-                        <div class="form-group" style="display: flex; align-items: flex-end;">
-                            <button type="submit" class="btn" style="width: 100%; background: linear-gradient(90deg, #22c55e, #16a34a);">
-                                ✓ Log Service
+                        <div class="form-group form-group-btn">
+                            <button type="submit" class="btn btn-gradient-green">Log Service
                             </button>
                         </div>
                     </div>
@@ -812,7 +1198,7 @@
                 <div class="section-header">
                     <h2>Mirror Controls</h2>
                 </div>
-                <p style="color: #a0a0a0; margin-bottom: 20px; font-size: 14px;">
+                <p class="section-description">
                     Send commands to the SmartMirror remotely.
                 </p>
                 <div class="quick-actions">
@@ -861,7 +1247,7 @@
                 <div class="section-header">
                     <h2>Mirror Layout</h2>
                 </div>
-                <p style="color: #a0a0a0; margin-bottom: 20px; font-size: 14px;">
+                <p class="section-description">
                     Choose which modules to show on your mirror and where to position them. Changes are saved automatically.
                 </p>
                 
@@ -874,7 +1260,7 @@
                 <div class="section-header">
                     <h2>Position Guide</h2>
                 </div>
-                <p style="color: #a0a0a0; margin-bottom: 12px; font-size: 13px; text-align: center;">
+                <p class="section-description-sm">
                     This is how positions appear on your mirror:
                 </p>
                 <div class="position-preview">
@@ -896,7 +1282,7 @@
 
     <div class="save-bar hidden" id="saveBar">
         <p>You have unsaved changes</p>
-        <div style="display: flex; gap: 12px;">
+        <div class="save-bar-buttons">
             <button class="btn btn-secondary" onclick="cancelModuleChanges()">Cancel</button>
             <button class="btn" onclick="saveModuleConfig()">Save & Apply</button>
         </div>
