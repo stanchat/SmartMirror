@@ -255,13 +255,25 @@ router.get('/users/pending', (req, res) => {
 
 router.post('/users/complete', (req, res) => {
     const data = loadData();
-    const { imageData, faceDescriptor } = req.body;
+    const { imageData, faceDescriptor, name: directName } = req.body;
     
     const pending = data.pending_registration;
-    if (!pending) {
+    const userName = pending ? pending.name : directName;
+    
+    if (!userName) {
         return res.json({
             success: false,
-            message: 'No pending registration'
+            message: 'No pending registration and no name provided'
+        });
+    }
+    
+    const existingUser = (data.users || []).find(u => 
+        u.name.toLowerCase() === userName.toLowerCase()
+    );
+    if (existingUser) {
+        return res.json({
+            success: false,
+            message: 'A customer with this name already exists'
         });
     }
     
@@ -291,7 +303,7 @@ router.post('/users/complete', (req, res) => {
     
     const newUser = {
         id: userId,
-        name: pending.name,
+        name: userName,
         trained_at: new Date().toISOString().split('T')[0],
         recognition_count: 0,
         face_image: faceImagePath,
