@@ -21,6 +21,19 @@ from telegram.ext import (
 TELEGRAM_LOG_FILE = os.path.join(os.path.dirname(__file__), "telegram_log.json")
 DATA_FILE = os.path.join(os.path.dirname(__file__), "data.json")
 
+HIDDEN_COMMANDS = {'/start', '/help', '/today', '/earnings', '/menu', '/cancel'}
+
+def is_hidden_message(text):
+    """Check if a message should be hidden from the mirror display."""
+    if not text:
+        return False
+    text_lower = text.lower().strip()
+    if text_lower in HIDDEN_COMMANDS:
+        return True
+    if text_lower.startswith('/') and len(text_lower) > 1:
+        return True
+    return False
+
 def load_data():
     """Load persistent data from JSON file."""
     try:
@@ -123,9 +136,6 @@ def get_appointments_menu():
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle /start command - show main menu."""
-    user = update.effective_user
-    log_telegram_message(user.first_name or user.username or "Unknown", "/start", update.effective_chat.id)
-    
     welcome_text = (
         "🪞 *Barber Admin Dashboard*\n\n"
         "Welcome! Use the buttons below to manage your shop.\n\n"

@@ -217,6 +217,11 @@ The project is configured for Replit deployment with:
 - **Run Command:** `node server.js`
 
 ## Recent Changes
+- **2025-11-30:** Telegram Message Filtering
+  - Bot commands (/start, /help, /today, /earnings) no longer displayed on mirror
+  - Only barber-relevant messages shown: customer messages, late alerts, custom text
+  - Commands filtered at both bot level (not logged) and display level (extra safety)
+
 - **2025-11-30:** Responsive Admin Panel
   - Breakpoints at 1024px (tablet), 768px (mobile), 480px (small phone)
   - Scrollable tab navigation on mobile with hidden scrollbars
