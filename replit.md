@@ -191,6 +191,14 @@ The project is configured for Replit deployment with:
 - **Run Command:** `node server.js`
 
 ## Recent Changes
+- **2025-11-30:** Face Registration System
+  - Admin panel registration: Barber can enter customer name and trigger camera capture
+  - Face image storage: Captures saved as files in backend/faces/ directory
+  - User profiles store image paths for future Azure identification integration
+  - Auto-prompt for unrecognized faces with friendly UI
+  - Voice command "mirror mirror, register" for self-registration
+  - Pending registration queue (admin initiates, mirror captures)
+
 - **2025-11-29:** Production Face & Voice Recognition
   - Integrated Azure Face API for real face detection
   - Added Web Speech API for real voice commands
