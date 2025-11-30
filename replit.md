@@ -64,10 +64,36 @@ Say "Mirror mirror..." followed by:
 | `clear` | Returns to idle mode |
 | `help` | Lists available commands |
 
+## Telegram Bot Integration
+
+### Bot: @BarberMirrorBot
+The SmartMirror includes a fully integrated Telegram bot that acts as a mobile-friendly admin console.
+
+### Features
+1. **Interactive Menus** - Inline keyboard buttons for easy navigation
+2. **Financial Tracking** - Record sales, view earnings, track weekly progress
+3. **Appointment Management** - View today's appointments, send running late alerts
+4. **Customer History** - View registered customers and visit counts
+5. **Mirror Remote Control** - Trigger face detection, show appointments, clear display
+6. **Message Relay** - Send text messages to display on the mirror
+
+### Quick Actions
+- Send a number (e.g., `45.50`) to record a sale
+- Send any text message to display on the mirror
+- Use `/start` for the main menu
+
+### Message Flow
+1. User sends message to @BarberMirrorBot
+2. Python bot logs message to `backend/telegram_log.json`
+3. MagicMirror module watches log file (every 2 seconds)
+4. New messages displayed on mirror with TTS announcement
+5. Commands (prefixed with `[COMMAND]`) trigger mirror actions
+
 ## Environment Variables
 
 ### Required Secrets
 - `AZURE_FACE_API_KEY` - Your Azure Face API subscription key
+- `TELEGRAM_BOT_TOKEN` - Telegram Bot API token from @BotFather
 
 ### Environment Variables
 - `AZURE_FACE_ENDPOINT` - Azure Face API endpoint URL
