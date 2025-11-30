@@ -22,7 +22,7 @@
       "id": 4,
       "name": "stan3",
       "trained_at": "2025-11-30",
-      "recognition_count": 2,
+      "recognition_count": 3,
       "face_image": "faces/user_4_1764519962359.jpg",
       "face_descriptor": [
         -0.10239266604185104,
@@ -155,7 +155,7 @@
         0.051710549741983414
       ],
       "services": [],
-      "last_seen": "2025-11-30T16:26:57.107Z"
+      "last_seen": "2025-11-30T16:37:46.113Z"
     }
   ],
   "appointments": [],
@@ -200,9 +200,22 @@
       "user_id": 4,
       "user_name": "stan3",
       "timestamp": "2025-11-30T16:26:57.107Z"
+    },
+    {
+      "user_id": 4,
+      "user_name": "stan3",
+      "timestamp": "2025-11-30T16:37:46.113Z"
     }
   ],
   "telegram_messages": [
+    {
+      "id": 1764521855296,
+      "timestamp": "2025-11-30T16:57:35.296966",
+      "sender": "Stan Lee Cee",
+      "text": "[LATE] Stan 3pm",
+      "chat_id": 6405933749,
+      "isNew": true
+    },
     {
       "id": 1764498870302,
       "timestamp": "2025-11-30T10:34:30.302979",
