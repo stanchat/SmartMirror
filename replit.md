@@ -217,6 +217,14 @@ The project is configured for Replit deployment with:
 - **Run Command:** `node server.js`
 
 ## Recent Changes
+- **2025-11-30:** Weather & Appointment System Fixes
+  - Removed confusing sunset time display from weather module (showSun: false)
+  - Replaced mock appointment data with real Telegram booking system
+  - Fixed time slot handling with stable identifiers (slot_0900, slot_1000, etc.)
+  - Added double-booking prevention for same date/time
+  - Appointments include both `user` and `client` fields for compatibility
+  - Time slots available: 9 AM - 5 PM in 1-hour increments
+
 - **2025-11-30:** Face Detection Reliability Improvements
   - Added retry logic (5 attempts, 2-second intervals) for auto-light warm-up scenarios
   - Improved camera resource cleanup with proper video element teardown
