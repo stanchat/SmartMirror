@@ -193,4 +193,142 @@ router.post('/mirror/command', (req, res) => {
     });
 });
 
+router.get('/users', (req, res) => {
+    const data = loadData();
+    const users = data.users || [];
+    
+    res.json({
+        success: true,
+        users: users,
+        count: users.length
+    });
+});
+
+router.post('/users/register', (req, res) => {
+    const data = loadData();
+    const { name } = req.body;
+    
+    if (!name || !name.trim()) {
+        return res.json({
+            success: false,
+            message: 'Please provide a customer name'
+        });
+    }
+    
+    const existingUser = (data.users || []).find(u => 
+        u.name.toLowerCase() === name.trim().toLowerCase()
+    );
+    
+    if (existingUser) {
+        return res.json({
+            success: false,
+            message: 'A customer with this name already exists'
+        });
+    }
+    
+    const pendingRegistration = {
+        name: name.trim(),
+        initiated_at: new Date().toISOString(),
+        status: 'pending'
+    };
+    
+    data.pending_registration = pendingRegistration;
+    saveData(data);
+    
+    console.log('Registration initiated for:', name);
+    
+    res.json({
+        success: true,
+        message: 'Registration initiated. Mirror will capture face.',
+        pending: pendingRegistration
+    });
+});
+
+router.get('/users/pending', (req, res) => {
+    const data = loadData();
+    
+    res.json({
+        success: true,
+        pending: data.pending_registration || null
+    });
+});
+
+router.post('/users/complete', (req, res) => {
+    const data = loadData();
+    const { imageData } = req.body;
+    
+    const pending = data.pending_registration;
+    if (!pending) {
+        return res.json({
+            success: false,
+            message: 'No pending registration'
+        });
+    }
+    
+    data.users = data.users || [];
+    const userId = Math.max(...data.users.map(u => u.id), 0) + 1;
+    let faceImagePath = null;
+    
+    if (imageData && imageData.startsWith('data:image')) {
+        try {
+            const facesDir = path.join(__dirname, '../backend/faces');
+            if (!fs.existsSync(facesDir)) {
+                fs.mkdirSync(facesDir, { recursive: true });
+            }
+            
+            const base64Data = imageData.replace(/^data:image\/\w+;base64,/, '');
+            const imageBuffer = Buffer.from(base64Data, 'base64');
+            const filename = `user_${userId}_${Date.now()}.jpg`;
+            const filepath = path.join(facesDir, filename);
+            
+            fs.writeFileSync(filepath, imageBuffer);
+            faceImagePath = `faces/${filename}`;
+            console.log('Face image saved:', faceImagePath);
+        } catch (err) {
+            console.error('Error saving face image:', err);
+        }
+    }
+    
+    const newUser = {
+        id: userId,
+        name: pending.name,
+        trained_at: new Date().toISOString().split('T')[0],
+        recognition_count: 0,
+        face_image: faceImagePath
+    };
+    
+    data.users.push(newUser);
+    delete data.pending_registration;
+    saveData(data);
+    
+    res.json({
+        success: true,
+        user: newUser,
+        message: 'Customer registered successfully'
+    });
+});
+
+router.delete('/users/:id', (req, res) => {
+    const data = loadData();
+    const userId = parseInt(req.params.id);
+    
+    data.users = data.users || [];
+    const userIndex = data.users.findIndex(u => u.id === userId);
+    
+    if (userIndex === -1) {
+        return res.json({
+            success: false,
+            message: 'User not found'
+        });
+    }
+    
+    data.users.splice(userIndex, 1);
+    saveData(data);
+    
+    res.json({
+        success: true,
+        message: 'User deleted successfully'
+    });
+});
+
 module.exports = router;

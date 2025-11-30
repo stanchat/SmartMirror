@@ -559,6 +559,39 @@
 
         <!-- Controls Tab -->
         <div id="controls-tab" class="tab-content">
+            <div class="section" style="border: 2px solid #7c3aed;">
+                <div class="section-header">
+                    <h2>Register Customer</h2>
+                </div>
+                <p style="color: #a0a0a0; margin-bottom: 20px; font-size: 14px;">
+                    Register a new customer's face when they sit in the chair. The mirror will capture their face.
+                </p>
+                <form id="registerCustomerForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="customerName">Customer Name</label>
+                            <input type="text" id="customerName" placeholder="John" required>
+                        </div>
+                        <div class="form-group" style="display: flex; align-items: flex-end;">
+                            <button type="submit" class="btn" style="width: 100%; background: linear-gradient(90deg, #7c3aed, #a855f7);">
+                                📷 Capture & Register
+                            </button>
+                        </div>
+                    </div>
+                </form>
+                <div id="registrationStatus" style="display: none; margin-top: 16px; padding: 12px; border-radius: 8px;"></div>
+            </div>
+
+            <div class="section">
+                <div class="section-header">
+                    <h2>Registered Customers</h2>
+                    <button class="btn btn-secondary" onclick="loadRegisteredUsers()">Refresh</button>
+                </div>
+                <ul class="message-list" id="registeredUsersList">
+                    <li class="loading">Loading...</li>
+                </ul>
+            </div>
+
             <div class="section">
                 <div class="section-header">
                     <h2>Mirror Controls</h2>
@@ -641,6 +674,8 @@
 
             if (tabName === 'telegram') {
                 loadMessages();
+            } else if (tabName === 'controls') {
+                loadRegisteredUsers();
             }
         }
 
@@ -822,6 +857,94 @@
                 alert('Failed to send command.');
             }
         }
+
+        async function loadRegisteredUsers() {
+            try {
+                const response = await fetch('/api/users');
+                const data = await response.json();
+                const users = data.users || [];
+                const listEl = document.getElementById('registeredUsersList');
+                
+                if (users.length === 0) {
+                    listEl.innerHTML = '<li class="empty-state">No registered customers yet</li>';
+                } else {
+                    listEl.innerHTML = users.map(u => `
+                        <li class="message-item">
+                            <div class="message-info">
+                                <span class="message-text">${escapeHtml(u.name)}</span>
+                                <span class="message-sender">Visits: ${u.recognition_count || 0}</span>
+                                <span class="message-time">Registered: ${u.trained_at || 'Unknown'}</span>
+                            </div>
+                            <button class="btn btn-danger" style="padding: 8px 16px; font-size: 12px;" onclick="deleteUser(${u.id})">Delete</button>
+                        </li>
+                    `).join('');
+                }
+            } catch (error) {
+                console.error('Failed to load users:', error);
+            }
+        }
+
+        async function deleteUser(userId) {
+            if (!confirm('Are you sure you want to delete this customer?')) return;
+            
+            try {
+                await fetch('/api/users/' + userId, {
+                    method: 'DELETE'
+                });
+                loadRegisteredUsers();
+            } catch (error) {
+                alert('Failed to delete user.');
+            }
+        }
+
+        document.getElementById('registerCustomerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const customerName = document.getElementById('customerName').value.trim();
+            if (!customerName) {
+                alert('Please enter a customer name');
+                return;
+            }
+            
+            const statusEl = document.getElementById('registrationStatus');
+            statusEl.style.display = 'block';
+            statusEl.style.background = 'rgba(124, 58, 237, 0.2)';
+            statusEl.style.color = '#a855f7';
+            statusEl.innerHTML = '📷 Sending capture command to mirror... Have the customer look at the mirror.';
+            
+            try {
+                const response = await fetch('/api/users/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: customerName })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    statusEl.style.background = 'rgba(34, 197, 94, 0.2)';
+                    statusEl.style.color = '#22c55e';
+                    statusEl.innerHTML = '✅ Registration initiated! The mirror is capturing ' + customerName + "'s face.";
+                    document.getElementById('customerName').value = '';
+                    
+                    setTimeout(() => {
+                        loadRegisteredUsers();
+                    }, 3000);
+                } else {
+                    statusEl.style.background = 'rgba(239, 68, 68, 0.2)';
+                    statusEl.style.color = '#ef4444';
+                    statusEl.innerHTML = '❌ ' + (data.message || 'Registration failed');
+                }
+            } catch (error) {
+                statusEl.style.background = 'rgba(239, 68, 68, 0.2)';
+                statusEl.style.color = '#ef4444';
+                statusEl.innerHTML = '❌ Failed to initiate registration. Please try again.';
+            }
+            
+            setTimeout(() => {
+                statusEl.style.display = 'none';
+            }, 5000);
+        });
 
         function openGoalsModal() {
             document.getElementById('goalsModal').classList.add('active');
