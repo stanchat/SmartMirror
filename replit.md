@@ -191,10 +191,18 @@ The project is configured for Replit deployment with:
 - **Run Command:** `node server.js`
 
 ## Recent Changes
+- **2025-11-30:** Local Face Recognition with face-api.js
+  - Integrated face-api.js for 100% local face recognition (no cloud waiting)
+  - Face descriptors (128-point arrays) stored with customer profiles
+  - Returning customers are recognized with "Welcome back!" + service history
+  - Service logging: Barber records what service each customer received
+  - Recommendations shown based on previous visits
+  - Models loaded locally (~13MB): SSD MobileNet + landmarks + recognition
+
 - **2025-11-30:** Face Registration System
   - Admin panel registration: Barber can enter customer name and trigger camera capture
   - Face image storage: Captures saved as files in backend/faces/ directory
-  - User profiles store image paths for future Azure identification integration
+  - Face descriptors stored for matching returning customers
   - Auto-prompt for unrecognized faces with friendly UI
   - Voice command "mirror mirror, register" for self-registration
   - Pending registration queue (admin initiates, mirror captures)

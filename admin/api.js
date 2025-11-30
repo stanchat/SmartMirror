@@ -255,7 +255,7 @@ router.get('/users/pending', (req, res) => {
 
 router.post('/users/complete', (req, res) => {
     const data = loadData();
-    const { imageData } = req.body;
+    const { imageData, faceDescriptor } = req.body;
     
     const pending = data.pending_registration;
     if (!pending) {
@@ -294,17 +294,112 @@ router.post('/users/complete', (req, res) => {
         name: pending.name,
         trained_at: new Date().toISOString().split('T')[0],
         recognition_count: 0,
-        face_image: faceImagePath
+        face_image: faceImagePath,
+        face_descriptor: faceDescriptor || null,
+        services: []
     };
     
     data.users.push(newUser);
     delete data.pending_registration;
     saveData(data);
     
+    console.log('User registered with face descriptor:', !!faceDescriptor);
+    
     res.json({
         success: true,
         user: newUser,
         message: 'Customer registered successfully'
+    });
+});
+
+router.get('/users/:id/history', (req, res) => {
+    const data = loadData();
+    const userId = parseInt(req.params.id);
+    
+    const user = (data.users || []).find(u => u.id === userId);
+    if (!user) {
+        return res.json({
+            success: false,
+            message: 'User not found'
+        });
+    }
+    
+    const services = user.services || [];
+    const lastService = services.length > 0 ? services[services.length - 1] : null;
+    
+    let recommendation = null;
+    if (lastService) {
+        recommendation = "Same as last time? " + lastService.service;
+    } else {
+        recommendation = "First visit! Ask about our popular services.";
+    }
+    
+    res.json({
+        success: true,
+        visitCount: (user.recognition_count || 0) + 1,
+        lastService: lastService,
+        services: services,
+        recommendation: recommendation
+    });
+});
+
+router.post('/users/:id/recognized', (req, res) => {
+    const data = loadData();
+    const userId = parseInt(req.params.id);
+    
+    const user = (data.users || []).find(u => u.id === userId);
+    if (!user) {
+        return res.json({ success: false, message: 'User not found' });
+    }
+    
+    user.recognition_count = (user.recognition_count || 0) + 1;
+    user.last_seen = new Date().toISOString();
+    
+    data.recognition_log = data.recognition_log || [];
+    data.recognition_log.push({
+        user_id: userId,
+        user_name: user.name,
+        timestamp: new Date().toISOString()
+    });
+    
+    if (data.recognition_log.length > 100) {
+        data.recognition_log = data.recognition_log.slice(-100);
+    }
+    
+    saveData(data);
+    
+    res.json({
+        success: true,
+        recognition_count: user.recognition_count
+    });
+});
+
+router.post('/users/:id/service', (req, res) => {
+    const data = loadData();
+    const userId = parseInt(req.params.id);
+    const { service, notes, amount } = req.body;
+    
+    const user = (data.users || []).find(u => u.id === userId);
+    if (!user) {
+        return res.json({ success: false, message: 'User not found' });
+    }
+    
+    user.services = user.services || [];
+    const serviceRecord = {
+        id: Date.now(),
+        service: service || 'Haircut',
+        notes: notes || '',
+        amount: parseFloat(amount) || 0,
+        date: new Date().toISOString()
+    };
+    
+    user.services.push(serviceRecord);
+    saveData(data);
+    
+    res.json({
+        success: true,
+        service: serviceRecord,
+        message: 'Service logged successfully'
     });
 });
 
