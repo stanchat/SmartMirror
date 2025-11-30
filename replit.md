@@ -5,7 +5,7 @@ This is a **production-ready SmartMirror** application running on Replit - a web
 
 **Version:** 2.30.0 (MagicMirror² base)  
 **Language:** Node.js (v20.19.3)  
-**Last Updated:** November 29, 2025
+**Last Updated:** November 30, 2025
 
 ## Production Features
 
@@ -217,6 +217,12 @@ The project is configured for Replit deployment with:
 - **Run Command:** `node server.js`
 
 ## Recent Changes
+- **2025-11-30:** Face Detection Reliability Improvements
+  - Added retry logic (5 attempts, 2-second intervals) for auto-light warm-up scenarios
+  - Improved camera resource cleanup with proper video element teardown
+  - Fixed "Register My Face" button to work without admin pre-registration
+  - API preserves pending registration on duplicate name errors
+
 - **2025-11-30:** Telegram Message Filtering
   - Bot commands (/start, /help, /today, /earnings) no longer displayed on mirror
   - Only barber-relevant messages shown: customer messages, late alerts, custom text
