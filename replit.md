@@ -217,6 +217,11 @@ The project is configured for Replit deployment with:
 - **Run Command:** `node server.js`
 
 ## Recent Changes
+- **2025-11-30:** Telegram Bot Stability Fix
+  - Fixed bot conflict error when multiple instances tried to poll simultaneously
+  - Added `drop_pending_updates=True` to clear stale sessions on startup
+  - Updated start.sh to kill orphaned bot processes before restarting
+
 - **2025-11-30:** Weather & Appointment System Fixes
   - Removed confusing sunset time display from weather module (showSun: false)
   - Replaced mock appointment data with real Telegram booking system
