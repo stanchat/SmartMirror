@@ -676,7 +676,7 @@ def main():
     
     print("Bot is running! Send /start to @BarberMirrorBot to begin.")
     
-    application.run_polling(allowed_updates=Update.ALL_TYPES)
+    application.run_polling(allowed_updates=Update.ALL_TYPES, drop_pending_updates=True)
 
 if __name__ == "__main__":
     main()
