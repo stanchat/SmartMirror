@@ -158,32 +158,7 @@
       "last_seen": "2025-11-30T16:26:57.107Z"
     }
   ],
-  "appointments": [
-    {
-      "id": 1,
-      "user": "Stan",
-      "service": "Haircut",
-      "time": "10:00 AM",
-      "date": "today",
-      "barber": "Joe"
-    },
-    {
-      "id": 2,
-      "user": "Sarah",
-      "service": "Color",
-      "time": "2:00 PM",
-      "date": "today",
-      "barber": "Mike"
-    },
-    {
-      "id": 3,
-      "user": "Alex",
-      "service": "Trim",
-      "time": "4:30 PM",
-      "date": "today",
-      "barber": "Joe"
-    }
-  ],
+  "appointments": [],
   "budget": {
     "weekly_goal": 2000,
     "monthly_goal": 8000,

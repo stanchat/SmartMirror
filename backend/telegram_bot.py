@@ -128,10 +128,35 @@ def get_appointments_menu():
     """Return the appointments submenu."""
     keyboard = [
         [InlineKeyboardButton("📋 View Today", callback_data="view_today")],
-        [InlineKeyboardButton("➕ Add Appointment", callback_data="add_appointment")],
+        [InlineKeyboardButton("➕ Book Appointment", callback_data="book_appointment")],
+        [InlineKeyboardButton("❌ Cancel Appointment", callback_data="cancel_appointment")],
         [InlineKeyboardButton("⏰ Running Late Alert", callback_data="running_late")],
         [InlineKeyboardButton("🏠 Main Menu", callback_data="main_menu")]
     ]
+    return InlineKeyboardMarkup(keyboard)
+
+def get_service_menu():
+    """Return the service selection menu."""
+    keyboard = [
+        [InlineKeyboardButton("💇 Haircut - $35", callback_data="service_haircut")],
+        [InlineKeyboardButton("✂️ Trim - $25", callback_data="service_trim")],
+        [InlineKeyboardButton("🎨 Color - $75", callback_data="service_color")],
+        [InlineKeyboardButton("💇‍♂️ Haircut + Beard - $45", callback_data="service_combo")],
+        [InlineKeyboardButton("🔙 Back", callback_data="appointments")]
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
+def get_time_slots_menu():
+    """Return available time slots."""
+    slots = ["9:00 AM", "10:00 AM", "11:00 AM", "12:00 PM", 
+             "1:00 PM", "2:00 PM", "3:00 PM", "4:00 PM", "5:00 PM"]
+    keyboard = []
+    for i in range(0, len(slots), 2):
+        row = [InlineKeyboardButton(slots[i], callback_data=f"time_{slots[i].replace(' ', '_').replace(':', '')}")]
+        if i + 1 < len(slots):
+            row.append(InlineKeyboardButton(slots[i+1], callback_data=f"time_{slots[i+1].replace(' ', '_').replace(':', '')}"))
+        keyboard.append(row)
+    keyboard.append([InlineKeyboardButton("🔙 Back", callback_data="appointments")])
     return InlineKeyboardMarkup(keyboard)
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -175,16 +200,19 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         app_data = load_data()
         appointments = app_data.get("appointments", [])
         today = datetime.now().strftime("%Y-%m-%d")
-        today_appointments = [a for a in appointments if a.get("date", "").startswith(today)]
+        today_appointments = [a for a in appointments if a.get("date", "") == today or a.get("date", "") == "today"]
         
         if today_appointments:
             text = "📅 *Today's Appointments:*\n\n"
             for apt in today_appointments:
-                text += f"⏰ {apt.get('time', 'N/A')} - {apt.get('client', 'Unknown')}\n"
+                name = apt.get('user', apt.get('client', 'Unknown'))
+                text += f"⏰ {apt.get('time', 'N/A')} - {name}\n"
                 text += f"   Service: {apt.get('service', 'General')}\n"
-                text += f"   Barber: {apt.get('barber', 'Any')}\n\n"
+                if apt.get('barber'):
+                    text += f"   Barber: {apt.get('barber')}\n"
+                text += "\n"
         else:
-            text = "📅 No appointments scheduled for today."
+            text = "📅 No appointments scheduled for today.\n\nUse *Book Appointment* to add one!"
         
         keyboard = [[InlineKeyboardButton("🔙 Back", callback_data="appointments")]]
         await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="Markdown")
@@ -314,6 +342,98 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             reply_markup=InlineKeyboardMarkup(keyboard),
             parse_mode="Markdown"
         )
+    
+    elif data == "book_appointment":
+        await query.edit_message_text(
+            "📅 *Book Appointment*\n\nSelect a service:",
+            reply_markup=get_service_menu(),
+            parse_mode="Markdown"
+        )
+    
+    elif data.startswith("service_"):
+        service_map = {
+            "service_haircut": ("Haircut", 35),
+            "service_trim": ("Trim", 25),
+            "service_color": ("Color", 75),
+            "service_combo": ("Haircut + Beard", 45)
+        }
+        service_name, price = service_map.get(data, ("Service", 0))
+        context.user_data["booking_service"] = service_name
+        context.user_data["booking_price"] = price
+        
+        await query.edit_message_text(
+            f"📅 *Book: {service_name}* (${price})\n\nSelect a time slot:",
+            reply_markup=get_time_slots_menu(),
+            parse_mode="Markdown"
+        )
+    
+    elif data.startswith("time_"):
+        time_str = data.replace("time_", "").replace("_", " ").replace("AM", " AM").replace("PM", " PM")
+        time_str = time_str.replace("  ", " ").strip()
+        if "00" in time_str and ":" not in time_str:
+            time_str = time_str[:len(time_str)-4] + ":" + time_str[len(time_str)-4:]
+        
+        context.user_data["booking_time"] = time_str
+        context.user_data["awaiting"] = "booking_name"
+        
+        service = context.user_data.get("booking_service", "Service")
+        keyboard = [[InlineKeyboardButton("❌ Cancel", callback_data="appointments")]]
+        await query.edit_message_text(
+            f"📅 *Almost Done!*\n\nService: {service}\nTime: {time_str}\n\nPlease enter your name:",
+            reply_markup=InlineKeyboardMarkup(keyboard),
+            parse_mode="Markdown"
+        )
+    
+    elif data == "cancel_appointment":
+        app_data = load_data()
+        appointments = app_data.get("appointments", [])
+        today = datetime.now().strftime("%Y-%m-%d")
+        today_appointments = [a for a in appointments if a.get("date", "") == today or a.get("date", "") == "today"]
+        
+        if today_appointments:
+            keyboard = []
+            for apt in today_appointments:
+                apt_text = f"{apt.get('time', 'N/A')} - {apt.get('user', apt.get('client', 'Unknown'))}"
+                keyboard.append([InlineKeyboardButton(f"❌ {apt_text}", callback_data=f"cancel_apt_{apt.get('id', 0)}")])
+            keyboard.append([InlineKeyboardButton("🔙 Back", callback_data="appointments")])
+            
+            await query.edit_message_text(
+                "❌ *Cancel Appointment*\n\nSelect appointment to cancel:",
+                reply_markup=InlineKeyboardMarkup(keyboard),
+                parse_mode="Markdown"
+            )
+        else:
+            keyboard = [[InlineKeyboardButton("🔙 Back", callback_data="appointments")]]
+            await query.edit_message_text(
+                "📅 No appointments to cancel today.",
+                reply_markup=InlineKeyboardMarkup(keyboard),
+                parse_mode="Markdown"
+            )
+    
+    elif data.startswith("cancel_apt_"):
+        apt_id = int(data.replace("cancel_apt_", ""))
+        app_data = load_data()
+        appointments = app_data.get("appointments", [])
+        
+        cancelled = None
+        app_data["appointments"] = [a for a in appointments if a.get("id") != apt_id]
+        for a in appointments:
+            if a.get("id") == apt_id:
+                cancelled = a
+                break
+        
+        save_data(app_data)
+        
+        if cancelled:
+            text = f"✅ Appointment cancelled!\n\n{cancelled.get('time', '')} - {cancelled.get('user', cancelled.get('client', ''))}"
+        else:
+            text = "✅ Appointment cancelled!"
+        
+        await query.edit_message_text(
+            text,
+            reply_markup=get_appointments_menu(),
+            parse_mode="Markdown"
+        )
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle text messages."""
@@ -373,6 +493,48 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
         await update.message.reply_text(
             f"✅ Message sent to mirror!\n\n\"{text}\"",
+            reply_markup=get_main_menu(),
+            parse_mode="Markdown"
+        )
+        return
+    
+    elif awaiting == "booking_name":
+        customer_name = text.strip()
+        service = context.user_data.get("booking_service", "Service")
+        time_slot = context.user_data.get("booking_time", "TBD")
+        price = context.user_data.get("booking_price", 0)
+        
+        app_data = load_data()
+        today = datetime.now().strftime("%Y-%m-%d")
+        
+        new_appointment = {
+            "id": int(datetime.now().timestamp() * 1000),
+            "user": customer_name,
+            "service": service,
+            "time": time_slot,
+            "date": today,
+            "barber": "Any",
+            "price": price,
+            "booked_via": "telegram",
+            "booked_by": sender
+        }
+        
+        app_data["appointments"] = app_data.get("appointments", [])
+        app_data["appointments"].append(new_appointment)
+        save_data(app_data)
+        
+        context.user_data["awaiting"] = None
+        context.user_data["booking_service"] = None
+        context.user_data["booking_time"] = None
+        context.user_data["booking_price"] = None
+        
+        await update.message.reply_text(
+            f"✅ *Appointment Booked!*\n\n"
+            f"👤 Name: {customer_name}\n"
+            f"✂️ Service: {service}\n"
+            f"⏰ Time: {time_slot}\n"
+            f"💰 Price: ${price}\n\n"
+            f"See you soon!",
             reply_markup=get_main_menu(),
             parse_mode="Markdown"
         )
