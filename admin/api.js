@@ -474,6 +474,124 @@ router.get('/config', (req, res) => {
     }
 });
 
+router.get('/modules', (req, res) => {
+    try {
+        const configPath = path.join(__dirname, '../config/config.js');
+        delete require.cache[require.resolve(configPath)];
+        const config = require(configPath);
+        
+        const modules = {};
+        for (const mod of config.modules || []) {
+            const key = mod.module.replace('MMM-', '').replace(/-/g, '_').toLowerCase();
+            const moduleName = mod.module;
+            
+            let moduleKey;
+            switch(moduleName) {
+                case 'clock': moduleKey = 'clock'; break;
+                case 'calendar': moduleKey = 'calendar'; break;
+                case 'weather': moduleKey = 'weather'; break;
+                case 'newsfeed': moduleKey = 'newsfeed'; break;
+                case 'MMM-Face-Recognition-SMAI': moduleKey = 'faceRecognition'; break;
+                case 'MMM-TelegramRelayDisplay': moduleKey = 'telegram'; break;
+                case 'MMM-Appointments': moduleKey = 'appointments'; break;
+                default: moduleKey = key;
+            }
+            
+            modules[moduleKey] = {
+                enabled: true,
+                position: mod.position || 'top_left',
+                ...mod.config
+            };
+        }
+        
+        res.json({ success: true, modules });
+    } catch (err) {
+        console.error('Modules GET error:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+router.post('/modules', (req, res) => {
+    try {
+        const { modules } = req.body;
+        const configPath = path.join(__dirname, '../config/config.js');
+        
+        const moduleMapping = {
+            clock: 'clock',
+            calendar: 'calendar',
+            weather: 'weather',
+            newsfeed: 'newsfeed',
+            faceRecognition: 'MMM-Face-Recognition-SMAI',
+            telegram: 'MMM-TelegramRelayDisplay',
+            appointments: 'MMM-Appointments'
+        };
+        
+        const configModules = [];
+        
+        configModules.push({ module: 'alert', position: 'top_bar' });
+        
+        for (const [key, config] of Object.entries(modules)) {
+            if (!config.enabled) continue;
+            
+            const moduleName = moduleMapping[key] || key;
+            const mod = {
+                module: moduleName,
+                position: config.position || 'top_left'
+            };
+            
+            const moduleConfig = { ...config };
+            delete moduleConfig.enabled;
+            delete moduleConfig.position;
+            
+            if (Object.keys(moduleConfig).length > 0) {
+                mod.config = moduleConfig;
+            }
+            
+            configModules.push(mod);
+        }
+        
+        let configContent = `/* SmartMirror Configuration - Auto-generated */
+let config = {
+    address: "0.0.0.0",
+    port: 8080,
+    basePath: "/",
+    ipWhitelist: [],
+    useHttps: false,
+    httpsPrivateKey: "",
+    httpsCertificate: "",
+    language: "en",
+    locale: "en-US",
+    logLevel: ["INFO", "LOG", "WARN", "ERROR"],
+    timeFormat: 12,
+    units: "imperial",
+    modules: [
+`;
+        
+        for (const mod of configModules) {
+            configContent += `        {\n`;
+            configContent += `            module: "${mod.module}",\n`;
+            if (mod.position) configContent += `            position: "${mod.position}",\n`;
+            if (mod.config) {
+                configContent += `            config: ${JSON.stringify(mod.config, null, 16).replace(/\n/g, '\n            ')}\n`;
+            }
+            configContent += `        },\n`;
+        }
+        
+        configContent += `    ]
+};
+
+/*************** DO NOT EDIT THE LINE BELOW ***************/
+if (typeof module !== "undefined") { module.exports = config; }
+`;
+        
+        fs.writeFileSync(configPath, configContent);
+        res.json({ success: true, message: 'Module configuration saved' });
+    } catch (err) {
+        console.error('Modules POST error:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
 router.post('/config', (req, res) => {
     try {
         const { modules } = req.body;
