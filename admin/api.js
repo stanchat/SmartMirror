@@ -2,7 +2,7 @@ const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const db = require('../backend/db');
-const { ServicesRepo, UsersRepo, AppointmentsRepo, TransactionsRepo, MessagesRepo, BudgetRepo, ShopsRepo } = require('../backend/db/repositories');
+const { ServicesRepo, UsersRepo, AppointmentsRepo, TransactionsRepo, MessagesRepo, BudgetRepo, ShopsRepo, WalkInQueueRepo, BarbersRepo, MirrorsRepo } = require('../backend/db/repositories');
 const { authMiddleware, requireAdmin, ROLES } = require('../backend/auth/middleware');
 
 const router = express.Router();
@@ -536,6 +536,480 @@ router.post('/mirror/command', authMiddleware, requireShopId, async (req, res) =
         res.json({ success: true, message: `Command ${command} sent` });
     } catch (err) {
         console.error('Command error:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+router.get('/queue', authMiddleware, requireShopId, async (req, res) => {
+    try {
+        const shopId = getShopId(req);
+        const statusFilter = req.query.status ? req.query.status.split(',') : ['waiting', 'called', 'in_service'];
+        
+        const queue = await WalkInQueueRepo.getByShop(shopId, statusFilter);
+        
+        res.json({
+            success: true,
+            queue: queue.map(q => ({
+                id: q.id,
+                position: q.queue_position,
+                customer_name: q.customer_name,
+                service: q.service_name,
+                preferred_barber: q.preferred_barber_name,
+                assigned_barber: q.assigned_barber_name,
+                status: q.status,
+                check_in_time: q.check_in_time,
+                called_time: q.called_time,
+                service_start_time: q.service_start_time,
+                wait_time: q.check_in_time ? Math.round((Date.now() - new Date(q.check_in_time).getTime()) / 60000) : 0
+            })),
+            count: queue.length
+        });
+    } catch (err) {
+        console.error('Queue error:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+router.post('/queue', authMiddleware, requireShopId, async (req, res) => {
+    try {
+        const { customer_name, service_id, preferred_barber_id } = req.body;
+        const shopId = getShopId(req);
+        
+        if (!customer_name) {
+            return res.status(400).json({ success: false, error: 'Customer name is required' });
+        }
+        
+        const entry = await WalkInQueueRepo.add({
+            shop_id: shopId,
+            customer_name: customer_name,
+            service_id: service_id || null,
+            preferred_barber_id: preferred_barber_id || null
+        });
+        
+        res.json({
+            success: true,
+            entry: entry,
+            message: `${customer_name} added to queue at position ${entry.queue_position}`
+        });
+    } catch (err) {
+        console.error('Queue add error:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+router.post('/queue/:id/call', authMiddleware, requireShopId, async (req, res) => {
+    try {
+        const shopId = getShopId(req);
+        const barberId = getBarberId(req);
+        const { mirror_id } = req.body;
+        
+        const entry = await WalkInQueueRepo.callNext(shopId, barberId, mirror_id);
+        
+        if (!entry) {
+            return res.status(404).json({ success: false, error: 'No customers waiting in queue' });
+        }
+        
+        res.json({
+            success: true,
+            entry: entry,
+            message: `Called ${entry.customer_name}`
+        });
+    } catch (err) {
+        console.error('Queue call error:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+router.post('/queue/:id/start', authMiddleware, requireShopId, async (req, res) => {
+    try {
+        const entry = await WalkInQueueRepo.startService(parseInt(req.params.id));
+        
+        if (!entry) {
+            return res.status(404).json({ success: false, error: 'Queue entry not found' });
+        }
+        
+        res.json({
+            success: true,
+            entry: entry,
+            message: 'Service started'
+        });
+    } catch (err) {
+        console.error('Queue start error:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+router.post('/queue/:id/complete', authMiddleware, requireShopId, async (req, res) => {
+    try {
+        const entry = await WalkInQueueRepo.completeService(parseInt(req.params.id));
+        
+        if (!entry) {
+            return res.status(404).json({ success: false, error: 'Queue entry not found' });
+        }
+        
+        res.json({
+            success: true,
+            entry: entry,
+            message: 'Service completed'
+        });
+    } catch (err) {
+        console.error('Queue complete error:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+router.post('/queue/:id/noshow', authMiddleware, requireShopId, async (req, res) => {
+    try {
+        const entry = await WalkInQueueRepo.markNoShow(parseInt(req.params.id));
+        
+        if (!entry) {
+            return res.status(404).json({ success: false, error: 'Queue entry not found' });
+        }
+        
+        res.json({
+            success: true,
+            entry: entry,
+            message: 'Marked as no-show'
+        });
+    } catch (err) {
+        console.error('Queue no-show error:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+router.get('/barbers', authMiddleware, requireShopId, async (req, res) => {
+    try {
+        const shopId = getShopId(req);
+        const includeInactive = req.query.all === 'true';
+        
+        const barbers = await BarbersRepo.getByShop(shopId, includeInactive);
+        
+        res.json({
+            success: true,
+            barbers: barbers.map(b => ({
+                id: b.id,
+                name: b.name,
+                email: b.email,
+                phone: b.phone,
+                role: b.role,
+                color: b.color,
+                is_active: b.is_active,
+                last_clock_in: b.last_clock_in,
+                has_face: !!b.face_descriptor
+            }))
+        });
+    } catch (err) {
+        console.error('Barbers error:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+router.post('/barbers', authMiddleware, requireAdmin, async (req, res) => {
+    try {
+        const { name, email, phone, pin_code, role, color } = req.body;
+        const shopId = getShopId(req);
+        
+        if (!name) {
+            return res.status(400).json({ success: false, error: 'Name is required' });
+        }
+        
+        const barber = await BarbersRepo.create({
+            shop_id: shopId,
+            name: name,
+            email: email || null,
+            phone: phone || null,
+            pin_code: pin_code || null,
+            role: role || 'barber',
+            color: color || '#3498db'
+        });
+        
+        res.json({
+            success: true,
+            barber: barber,
+            message: 'Barber created successfully'
+        });
+    } catch (err) {
+        console.error('Barber create error:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+router.put('/barbers/:id', authMiddleware, requireAdmin, async (req, res) => {
+    try {
+        const { name, email, phone, pin_code, role, color, is_active } = req.body;
+        const shopId = getShopId(req);
+        
+        const existingBarber = await BarbersRepo.getById(parseInt(req.params.id));
+        if (!existingBarber || existingBarber.shop_id !== shopId) {
+            return res.status(404).json({ success: false, error: 'Barber not found' });
+        }
+        
+        const barber = await BarbersRepo.update(parseInt(req.params.id), {
+            name, email, phone, pin_code, role, color, is_active
+        });
+        
+        res.json({
+            success: true,
+            barber: barber,
+            message: 'Barber updated successfully'
+        });
+    } catch (err) {
+        console.error('Barber update error:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+router.delete('/barbers/:id', authMiddleware, requireAdmin, async (req, res) => {
+    try {
+        const shopId = getShopId(req);
+        const existingBarber = await BarbersRepo.getById(parseInt(req.params.id));
+        
+        if (!existingBarber || existingBarber.shop_id !== shopId) {
+            return res.status(404).json({ success: false, error: 'Barber not found' });
+        }
+        
+        await BarbersRepo.delete(parseInt(req.params.id));
+        res.json({ success: true, message: 'Barber deactivated' });
+    } catch (err) {
+        console.error('Barber delete error:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+router.post('/barbers/clock-in', authMiddleware, requireShopId, async (req, res) => {
+    try {
+        const { mirror_id, pin_code, face_descriptor } = req.body;
+        const shopId = getShopId(req);
+        
+        let barber = null;
+        
+        if (pin_code) {
+            barber = await BarbersRepo.getByPinCode(shopId, pin_code);
+        } else if (face_descriptor && Array.isArray(face_descriptor)) {
+            const barbers = await BarbersRepo.getByShop(shopId);
+            const threshold = 0.5;
+            
+            for (const b of barbers) {
+                if (b.face_descriptor) {
+                    let storedDescriptor = b.face_descriptor;
+                    if (typeof storedDescriptor === 'string') {
+                        storedDescriptor = JSON.parse(storedDescriptor);
+                    }
+                    
+                    let distance = 0;
+                    for (let i = 0; i < face_descriptor.length; i++) {
+                        distance += Math.pow(face_descriptor[i] - storedDescriptor[i], 2);
+                    }
+                    distance = Math.sqrt(distance);
+                    
+                    if (distance < threshold) {
+                        barber = b;
+                        break;
+                    }
+                }
+            }
+        }
+        
+        if (!barber) {
+            return res.status(401).json({ success: false, error: 'Invalid PIN or face not recognized' });
+        }
+        
+        const existingSession = await BarbersRepo.getActiveSession(barber.id);
+        if (existingSession) {
+            return res.status(400).json({ 
+                success: false, 
+                error: `Already clocked in at ${existingSession.mirror_label}` 
+            });
+        }
+        
+        let mirrorId = mirror_id;
+        if (!mirrorId) {
+            const mirrors = await MirrorsRepo.getByShop(shopId);
+            if (mirrors.length > 0) {
+                mirrorId = mirrors[0].id;
+            }
+        }
+        
+        if (!mirrorId) {
+            return res.status(400).json({ success: false, error: 'No mirror available for clock-in' });
+        }
+        
+        const session = await BarbersRepo.clockIn(barber.id, mirrorId);
+        
+        res.json({
+            success: true,
+            barber: { id: barber.id, name: barber.name, role: barber.role },
+            session: session,
+            message: `${barber.name} clocked in successfully`
+        });
+    } catch (err) {
+        console.error('Clock-in error:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+router.post('/barbers/clock-out', authMiddleware, requireShopId, async (req, res) => {
+    try {
+        const barberId = getBarberId(req);
+        
+        if (!barberId) {
+            return res.status(400).json({ success: false, error: 'Barber ID required' });
+        }
+        
+        const session = await BarbersRepo.clockOut(barberId);
+        
+        if (!session) {
+            return res.status(400).json({ success: false, error: 'No active session to clock out' });
+        }
+        
+        res.json({
+            success: true,
+            session: session,
+            message: 'Clocked out successfully'
+        });
+    } catch (err) {
+        console.error('Clock-out error:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+router.get('/barbers/session', authMiddleware, requireShopId, async (req, res) => {
+    try {
+        const barberId = getBarberId(req);
+        
+        if (!barberId) {
+            return res.json({ success: true, session: null });
+        }
+        
+        const session = await BarbersRepo.getActiveSession(barberId);
+        
+        res.json({
+            success: true,
+            session: session || null
+        });
+    } catch (err) {
+        console.error('Session check error:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+router.post('/barbers/:id/face', authMiddleware, requireAdmin, async (req, res) => {
+    try {
+        const { face_descriptor } = req.body;
+        const shopId = getShopId(req);
+        
+        const existingBarber = await BarbersRepo.getById(parseInt(req.params.id));
+        if (!existingBarber || existingBarber.shop_id !== shopId) {
+            return res.status(404).json({ success: false, error: 'Barber not found' });
+        }
+        
+        if (!face_descriptor) {
+            return res.status(400).json({ success: false, error: 'Face descriptor required' });
+        }
+        
+        const barber = await BarbersRepo.update(parseInt(req.params.id), {
+            face_descriptor: face_descriptor
+        });
+        
+        res.json({
+            success: true,
+            barber: { id: barber.id, name: barber.name, has_face: !!barber.face_descriptor },
+            message: 'Face registered for barber'
+        });
+    } catch (err) {
+        console.error('Barber face registration error:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+router.get('/mirrors', authMiddleware, requireShopId, async (req, res) => {
+    try {
+        const shopId = getShopId(req);
+        const mirrors = await MirrorsRepo.getByShop(shopId);
+        
+        res.json({
+            success: true,
+            mirrors: mirrors.map(m => ({
+                id: m.id,
+                label: m.label,
+                device_uid: m.device_uid,
+                status: m.status,
+                last_seen: m.last_seen,
+                is_active: m.is_active,
+                registration_code: m.registration_code,
+                registration_expires: m.registration_expires
+            }))
+        });
+    } catch (err) {
+        console.error('Mirrors error:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+router.post('/mirrors', authMiddleware, requireAdmin, async (req, res) => {
+    try {
+        const { label } = req.body;
+        const shopId = getShopId(req);
+        
+        if (!label) {
+            return res.status(400).json({ success: false, error: 'Label is required' });
+        }
+        
+        const mirror = await MirrorsRepo.create({
+            shop_id: shopId,
+            label: label
+        });
+        
+        res.json({
+            success: true,
+            mirror: mirror,
+            message: 'Mirror created successfully'
+        });
+    } catch (err) {
+        console.error('Mirror create error:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+router.post('/mirrors/:id/register-code', authMiddleware, requireAdmin, async (req, res) => {
+    try {
+        const shopId = getShopId(req);
+        const mirror = await MirrorsRepo.getById(parseInt(req.params.id));
+        
+        if (!mirror || mirror.shop_id !== shopId) {
+            return res.status(404).json({ success: false, error: 'Mirror not found' });
+        }
+        
+        const updated = await MirrorsRepo.generateRegistrationCode(parseInt(req.params.id));
+        
+        res.json({
+            success: true,
+            mirror: updated,
+            message: `Registration code: ${updated.registration_code} (valid for 24 hours)`
+        });
+    } catch (err) {
+        console.error('Registration code error:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+router.delete('/mirrors/:id', authMiddleware, requireAdmin, async (req, res) => {
+    try {
+        const shopId = getShopId(req);
+        const mirror = await MirrorsRepo.getById(parseInt(req.params.id));
+        
+        if (!mirror || mirror.shop_id !== shopId) {
+            return res.status(404).json({ success: false, error: 'Mirror not found' });
+        }
+        
+        await MirrorsRepo.delete(parseInt(req.params.id));
+        
+        res.json({
+            success: true,
+            message: 'Mirror deleted successfully'
+        });
+    } catch (err) {
+        console.error('Mirror delete error:', err);
         res.status(500).json({ success: false, error: err.message });
     }
 });

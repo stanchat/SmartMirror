@@ -1055,6 +1055,149 @@
         .logout-btn:hover {
             background: rgba(239, 68, 68, 0.3);
         }
+        
+        .queue-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .queue-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .queue-item.waiting {
+            border-left: 4px solid #3b82f6;
+        }
+        
+        .queue-item.called {
+            border-left: 4px solid #f59e0b;
+            background: rgba(245, 158, 11, 0.1);
+        }
+        
+        .queue-item.in_service {
+            border-left: 4px solid #22c55e;
+            background: rgba(34, 197, 94, 0.1);
+        }
+        
+        .queue-info {
+            flex: 1;
+        }
+        
+        .queue-position {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            background: rgba(124, 58, 237, 0.3);
+            color: #a78bfa;
+            border-radius: 50%;
+            font-weight: 700;
+            margin-right: 12px;
+        }
+        
+        .queue-name {
+            font-weight: 600;
+            font-size: 16px;
+        }
+        
+        .queue-details {
+            color: #a0a0a0;
+            font-size: 13px;
+            margin-top: 4px;
+        }
+        
+        .queue-wait {
+            color: #ef4444;
+            font-size: 12px;
+            margin-top: 4px;
+        }
+        
+        .queue-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .queue-actions button {
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+        
+        .btn-call {
+            background: #f59e0b;
+            color: #000;
+        }
+        
+        .btn-call:hover {
+            background: #d97706;
+        }
+        
+        .btn-start {
+            background: #22c55e;
+            color: #fff;
+        }
+        
+        .btn-start:hover {
+            background: #16a34a;
+        }
+        
+        .btn-complete {
+            background: #3b82f6;
+            color: #fff;
+        }
+        
+        .btn-complete:hover {
+            background: #2563eb;
+        }
+        
+        .btn-noshow {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+        }
+        
+        .btn-noshow:hover {
+            background: rgba(239, 68, 68, 0.3);
+        }
+        
+        .queue-empty {
+            text-align: center;
+            padding: 40px;
+            color: #a0a0a0;
+        }
+        
+        .queue-status {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .queue-status.waiting {
+            background: rgba(59, 130, 246, 0.2);
+            color: #3b82f6;
+        }
+        
+        .queue-status.called {
+            background: rgba(245, 158, 11, 0.2);
+            color: #f59e0b;
+        }
+        
+        .queue-status.in_service {
+            background: rgba(34, 197, 94, 0.2);
+            color: #22c55e;
+        }
     </style>
 </head>
 <body>
@@ -1070,6 +1213,7 @@
         <button class="tab" onclick="switchTab('services')">✂️ Services</button>
         <button class="tab admin-only" onclick="switchTab('barbers')">👥 Team</button>
         <button class="tab admin-only" onclick="switchTab('mirrors')">🪞 Mirrors</button>
+        <button class="tab" onclick="switchTab('queue')">📋 Queue</button>
         <button class="tab" onclick="switchTab('telegram')">💬 Telegram Bot</button>
         <button class="tab" onclick="switchTab('controls')">🎛️ Mirror Controls</button>
         <button class="tab admin-only" onclick="switchTab('modules')">🧩 Modules</button>
@@ -1190,6 +1334,66 @@
                 </p>
                 <div id="mirrorsList" class="services-grid">
                     <div class="loading">Loading mirrors...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Queue Tab -->
+        <div id="queue-tab" class="tab-content">
+            <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr);">
+                <div class="stat-card">
+                    <h3>Waiting</h3>
+                    <div class="value blue" id="queueWaiting">0</div>
+                    <p style="color: #666; font-size: 13px;">customers in line</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Being Served</h3>
+                    <div class="value green" id="queueServing">0</div>
+                    <p style="color: #666; font-size: 13px;">currently in service</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Avg Wait Time</h3>
+                    <div class="value purple" id="queueAvgWait">0m</div>
+                    <p style="color: #666; font-size: 13px;">for waiting customers</p>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-header">
+                    <h2>Add Walk-In Customer</h2>
+                </div>
+                <form id="addToQueueForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="queueCustomerName">Customer Name</label>
+                            <input type="text" id="queueCustomerName" placeholder="John" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="queueService">Service (optional)</label>
+                            <select id="queueService">
+                                <option value="">Any Service</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="queueBarber">Preferred Barber (optional)</label>
+                            <select id="queueBarber">
+                                <option value="">Any Available</option>
+                            </select>
+                        </div>
+                        <div class="form-group form-group-btn">
+                            <button type="submit" class="btn">+ Add to Queue</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <div class="section">
+                <div class="section-header">
+                    <h2>Current Queue</h2>
+                    <button class="btn btn-secondary" onclick="loadQueue()">Refresh</button>
+                </div>
+                <div id="queueList" class="queue-list">
+                    <div class="loading">Loading queue...</div>
                 </div>
             </div>
         </div>
@@ -1624,12 +1828,15 @@
                 loadMessages();
             } else if (tabName === 'controls') {
                 loadRegisteredUsers();
+            } else if (tabName === 'queue') {
+                loadQueue();
+                loadQueueDropdowns();
             }
         }
 
         async function loadBudget() {
             try {
-                const response = await fetch('/api/budget');
+                const response = await fetch('/api/budget', { headers: getAuthHeaders() });
                 const data = await response.json();
                 budgetData = data;
                 updateBudgetUI(data);
@@ -1678,7 +1885,7 @@
         // Services Management
         async function loadServices() {
             try {
-                const response = await fetch('/api/services?all=true');
+                const response = await fetch('/api/services?all=true', { headers: getAuthHeaders() });
                 const data = await response.json();
                 
                 if (data.success) {
@@ -1791,9 +1998,225 @@
             }
         });
 
+        // Queue Management
+        async function loadQueue() {
+            try {
+                const response = await fetch('/api/queue', { headers: getAuthHeaders() });
+                const data = await response.json();
+                
+                if (data.success) {
+                    renderQueue(data.queue);
+                    updateQueueStats(data.queue);
+                }
+            } catch (error) {
+                console.error('Error loading queue:', error);
+                document.getElementById('queueList').innerHTML = '<div class="error">Failed to load queue</div>';
+            }
+        }
+        
+        function updateQueueStats(queue) {
+            const waiting = queue.filter(q => q.status === 'waiting').length;
+            const serving = queue.filter(q => q.status === 'in_service').length;
+            const waitingItems = queue.filter(q => q.status === 'waiting');
+            const avgWait = waitingItems.length > 0 
+                ? Math.round(waitingItems.reduce((sum, q) => sum + q.wait_time, 0) / waitingItems.length)
+                : 0;
+            
+            document.getElementById('queueWaiting').textContent = waiting;
+            document.getElementById('queueServing').textContent = serving;
+            document.getElementById('queueAvgWait').textContent = avgWait + 'm';
+        }
+        
+        function renderQueue(queue) {
+            const container = document.getElementById('queueList');
+            
+            if (!queue || queue.length === 0) {
+                container.innerHTML = '<div class="queue-empty">No customers in queue</div>';
+                return;
+            }
+            
+            container.innerHTML = queue.map(item => `
+                <div class="queue-item ${item.status}">
+                    <div style="display: flex; align-items: center;">
+                        <span class="queue-position">${item.position}</span>
+                        <div class="queue-info">
+                            <div class="queue-name">${item.customer_name}</div>
+                            <div class="queue-details">
+                                ${item.service || 'Any Service'}
+                                ${item.preferred_barber ? ' • Prefers: ' + item.preferred_barber : ''}
+                                ${item.assigned_barber ? ' • With: ' + item.assigned_barber : ''}
+                            </div>
+                            ${item.status === 'waiting' ? `<div class="queue-wait">Waiting ${item.wait_time} min</div>` : ''}
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <span class="queue-status ${item.status}">${item.status.replace('_', ' ')}</span>
+                        <div class="queue-actions">
+                            ${getQueueActions(item)}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function getQueueActions(item) {
+            switch(item.status) {
+                case 'waiting':
+                    return `
+                        <button class="btn-call" onclick="callQueueCustomer(${item.id})">Call</button>
+                        <button class="btn-noshow" onclick="markNoShow(${item.id})">No Show</button>
+                    `;
+                case 'called':
+                    return `
+                        <button class="btn-start" onclick="startService(${item.id})">Start</button>
+                        <button class="btn-noshow" onclick="markNoShow(${item.id})">No Show</button>
+                    `;
+                case 'in_service':
+                    return `
+                        <button class="btn-complete" onclick="completeService(${item.id})">Complete</button>
+                    `;
+                default:
+                    return '';
+            }
+        }
+        
+        async function loadQueueDropdowns() {
+            try {
+                const [servicesRes, barbersRes] = await Promise.all([
+                    fetch('/api/services', { headers: getAuthHeaders() }),
+                    fetch('/api/barbers', { headers: getAuthHeaders() })
+                ]);
+                
+                const servicesData = await servicesRes.json();
+                const barbersData = await barbersRes.json();
+                
+                if (servicesData.success) {
+                    const serviceSelect = document.getElementById('queueService');
+                    serviceSelect.innerHTML = '<option value="">Any Service</option>' +
+                        servicesData.services.map(s => `<option value="${s.id}">${s.name} - $${s.price}</option>`).join('');
+                }
+                
+                if (barbersData.success) {
+                    const barberSelect = document.getElementById('queueBarber');
+                    barberSelect.innerHTML = '<option value="">Any Available</option>' +
+                        barbersData.barbers.map(b => `<option value="${b.id}">${b.name}</option>`).join('');
+                }
+            } catch (error) {
+                console.error('Error loading dropdowns:', error);
+            }
+        }
+        
+        document.getElementById('addToQueueForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const customerName = document.getElementById('queueCustomerName').value;
+            const serviceId = document.getElementById('queueService').value || null;
+            const barberId = document.getElementById('queueBarber').value || null;
+            
+            try {
+                const response = await fetch('/api/queue', {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({
+                        customer_name: customerName,
+                        service_id: serviceId ? parseInt(serviceId) : null,
+                        preferred_barber_id: barberId ? parseInt(barberId) : null
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('queueCustomerName').value = '';
+                    document.getElementById('queueService').value = '';
+                    document.getElementById('queueBarber').value = '';
+                    loadQueue();
+                } else {
+                    alert('Error: ' + (data.error || 'Failed to add to queue'));
+                }
+            } catch (error) {
+                console.error('Error adding to queue:', error);
+                alert('Error adding customer to queue');
+            }
+        });
+        
+        async function callQueueCustomer(id) {
+            try {
+                const response = await fetch(`/api/queue/${id}/call`, {
+                    method: 'POST',
+                    headers: getAuthHeaders()
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    loadQueue();
+                } else {
+                    alert('Error: ' + (data.error || 'Failed to call customer'));
+                }
+            } catch (error) {
+                console.error('Error calling customer:', error);
+            }
+        }
+        
+        async function startService(id) {
+            try {
+                const response = await fetch(`/api/queue/${id}/start`, {
+                    method: 'POST',
+                    headers: getAuthHeaders()
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    loadQueue();
+                } else {
+                    alert('Error: ' + (data.error || 'Failed to start service'));
+                }
+            } catch (error) {
+                console.error('Error starting service:', error);
+            }
+        }
+        
+        async function completeService(id) {
+            try {
+                const response = await fetch(`/api/queue/${id}/complete`, {
+                    method: 'POST',
+                    headers: getAuthHeaders()
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    loadQueue();
+                } else {
+                    alert('Error: ' + (data.error || 'Failed to complete service'));
+                }
+            } catch (error) {
+                console.error('Error completing service:', error);
+            }
+        }
+        
+        async function markNoShow(id) {
+            if (!confirm('Mark this customer as no-show?')) return;
+            
+            try {
+                const response = await fetch(`/api/queue/${id}/noshow`, {
+                    method: 'POST',
+                    headers: getAuthHeaders()
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    loadQueue();
+                } else {
+                    alert('Error: ' + (data.error || 'Failed to mark no-show'));
+                }
+            } catch (error) {
+                console.error('Error marking no-show:', error);
+            }
+        }
+
         async function loadMessages() {
             try {
-                const response = await fetch('/api/telegram/messages');
+                const response = await fetch('/api/telegram/messages', { headers: getAuthHeaders() });
                 const data = await response.json();
                 updateMessagesUI(data.messages || []);
             } catch (error) {
@@ -1834,7 +2257,7 @@
             try {
                 await fetch('/api/budget/transaction', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: getAuthHeaders(),
                     body: JSON.stringify({ amount, service, client })
                 });
                 
@@ -1857,8 +2280,8 @@
             try {
                 await fetch('/api/telegram/send', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ sender, text })
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ message: text })
                 });
                 
                 document.getElementById('messageText').value = '';
@@ -1878,7 +2301,7 @@
             try {
                 await fetch('/api/budget/goals', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: getAuthHeaders(),
                     body: JSON.stringify({ weekly_goal, monthly_goal })
                 });
                 
@@ -1900,8 +2323,8 @@
             try {
                 await fetch('/api/telegram/send', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ sender: 'Bot Command', text: messages[command] })
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ message: messages[command] })
                 });
                 loadMessages();
             } catch (error) {
@@ -1913,7 +2336,7 @@
             try {
                 await fetch('/api/mirror/command', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: getAuthHeaders(),
                     body: JSON.stringify({ command })
                 });
                 alert('Command sent: ' + command);
@@ -1924,7 +2347,7 @@
 
         async function loadRegisteredUsers() {
             try {
-                const response = await fetch('/api/users');
+                const response = await fetch('/api/users', { headers: getAuthHeaders() });
                 const data = await response.json();
                 const users = data.users || [];
                 const listEl = document.getElementById('registeredUsersList');
@@ -1977,9 +2400,9 @@
             statusEl.innerHTML = '📷 Sending capture command to mirror... Have the customer look at the mirror.';
             
             try {
-                const response = await fetch('/api/users/register', {
+                const response = await fetch('/api/users', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: getAuthHeaders(),
                     body: JSON.stringify({ name: customerName })
                 });
                 
@@ -2024,7 +2447,7 @@
 
         async function populateCustomerDropdown() {
             try {
-                const response = await fetch('/api/users');
+                const response = await fetch('/api/users', { headers: getAuthHeaders() });
                 const data = await response.json();
                 const users = data.users || [];
                 const select = document.getElementById('serviceCustomer');
@@ -2058,7 +2481,7 @@
             try {
                 const response = await fetch('/api/users/' + customerId + '/service', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: getAuthHeaders(),
                     body: JSON.stringify({ 
                         service: serviceType,
                         amount: parseFloat(amount) || 0,
@@ -2186,7 +2609,7 @@
 
         async function loadModuleConfig() {
             try {
-                const response = await fetch('/api/modules');
+                const response = await fetch('/api/modules', { headers: getAuthHeaders() });
                 const data = await response.json();
                 moduleConfig = data.modules;
                 originalModuleConfig = JSON.parse(JSON.stringify(moduleConfig));
@@ -2309,7 +2732,7 @@
             try {
                 const response = await fetch('/api/modules', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: getAuthHeaders(),
                     body: JSON.stringify({ modules: moduleConfig })
                 });
 
@@ -2341,7 +2764,7 @@
 
         async function loadBarbers() {
             try {
-                const response = await fetch('/api/auth/barbers', {
+                const response = await fetch('/api/barbers', {
                     headers: getAuthHeaders()
                 });
                 const data = await response.json();
@@ -2452,7 +2875,7 @@
             };
 
             try {
-                const url = id ? `/api/auth/barbers/${id}` : '/api/auth/barbers';
+                const url = id ? `/api/barbers/${id}` : '/api/barbers';
                 const method = id ? 'PUT' : 'POST';
                 
                 const response = await fetch(url, {
@@ -2475,7 +2898,7 @@
 
         async function loadMirrors() {
             try {
-                const response = await fetch('/api/auth/mirrors', {
+                const response = await fetch('/api/mirrors', {
                     headers: getAuthHeaders()
                 });
                 const data = await response.json();
@@ -2525,7 +2948,7 @@
 
         async function regenerateCode(id) {
             try {
-                const response = await fetch(`/api/auth/mirrors/${id}/regenerate-code`, {
+                const response = await fetch(`/api/mirrors/${id}/register-code`, {
                     method: 'POST',
                     headers: getAuthHeaders()
                 });
@@ -2546,7 +2969,7 @@
             if (!confirm('Are you sure you want to remove this mirror?')) return;
             
             try {
-                const response = await fetch(`/api/auth/mirrors/${id}`, {
+                const response = await fetch(`/api/mirrors/${id}`, {
                     method: 'DELETE',
                     headers: getAuthHeaders()
                 });
@@ -2568,7 +2991,7 @@
             const label = document.getElementById('mirrorLabel').value;
 
             try {
-                const response = await fetch('/api/auth/mirrors', {
+                const response = await fetch('/api/mirrors', {
                     method: 'POST',
                     headers: getAuthHeaders(),
                     body: JSON.stringify({ label })
