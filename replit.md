@@ -1,329 +1,56 @@
 # SmartMirror on Replit
 
 ## Overview
-This is a **production-ready SmartMirror** application running on Replit - a web-based smart mirror system built on MagicMirror² with **real face recognition** (Azure Face API) and **real voice commands** (Web Speech API). It provides personalized greetings, voice-activated control, appointment scheduling, Telegram messaging relay, calendar integration, and budget tracking for barbers.
-
-**Version:** 2.30.0 (MagicMirror² base)  
-**Language:** Node.js (v20.19.3) + Python 3.11 (Telegram bot)  
-**Database:** PostgreSQL (Neon-backed Replit DB)
-**Last Updated:** December 1, 2025
-
-## Production Features
-
-### Real Face Recognition (Azure Face API)
-- Uses Microsoft Azure Face API for actual face detection
-- Detects face attributes (age, gender, emotions)
-- Webcam access via browser's `getUserMedia()` API
-- Falls back to simulation mode if camera unavailable
-
-### Real Voice Commands (Web Speech API)
-- Browser-based speech recognition (Chrome/Edge)
-- "Mirror mirror..." wake phrase activation
-- Continuous listening mode with visual feedback
-- Text-to-speech responses
-
-### Status Indicators
-- 📷 **Camera Ready** - Webcam available
-- 🎤 **Voice Ready** - Speech recognition supported
-- ☁️ **Azure Connected** - Azure Face API configured
-
-## Pages
-
-### Mirror View (`/`)
-Customer-facing smart mirror display with:
-- Clock and date
-- Real face recognition with camera
-- Real voice commands with microphone
-- Calendar with US holidays
-- Weather (current + forecast) for Chicago
-- Telegram message display
-- Today's appointments
-- News feed (NY Times)
-
-### Admin Panel (`/admin`)
-Barber-only management page with five tabs:
-1. **Budget Tab:** Weekly/monthly goal tracking, add earnings, transaction history
-2. **Services Tab:** Manage services/products with prices and durations
-3. **Telegram Bot Tab:** Send messages to mirror, quick bot commands, message history
-4. **Mirror Controls Tab:** Remote control for face detection, greetings, show messages
-5. **Modules Tab:** Configure MagicMirror module positions and settings
-
-## Voice Commands
-
-Say "Mirror mirror..." followed by:
-
-| Command | Action |
-|---------|--------|
-| `detect face` | Triggers face recognition with camera |
-| `who am i` | Identifies the person |
-| `register` / `new face` | Trains a new user |
-| `show messages` | Displays Telegram messages |
-| `show appointments` | Shows today's schedule |
-| `show calendar` | Displays upcoming events |
-| `weather` | Shows weather info |
-| `news` | Shows news headlines |
-| `what time is it` | Speaks the current time |
-| `what's the date` | Speaks today's date |
-| `clear` | Returns to idle mode |
-| `help` | Lists available commands |
-
-## Telegram Bot Integration
-
-### Bot: @BarberMirrorBot
-The SmartMirror includes a fully integrated Telegram bot that acts as a mobile-friendly admin console.
-
-### Features
-1. **Interactive Menus** - Inline keyboard buttons for easy navigation
-2. **Financial Tracking** - Record sales, view earnings, track weekly progress
-3. **Appointment Management** - View today's appointments, send running late alerts
-4. **Customer History** - View registered customers and visit counts
-5. **Mirror Remote Control** - Trigger face detection, show appointments, clear display
-6. **Message Relay** - Send text messages to display on the mirror
-
-### Quick Actions
-- Send a number (e.g., `45.50`) to record a sale
-- Send any text message to display on the mirror
-- Use `/start` for the main menu
-
-### Message Flow
-1. User sends message to @BarberMirrorBot
-2. Python bot logs message to PostgreSQL database
-3. MagicMirror module polls API every 2 seconds
-4. New messages displayed on mirror with TTS announcement
-5. Commands (prefixed with `[COMMAND]`) trigger mirror actions
-
-## Environment Variables
-
-### Required Secrets
-- `AZURE_FACE_API_KEY` - Your Azure Face API subscription key
-- `TELEGRAM_BOT_TOKEN` - Telegram Bot API token from @BotFather
-
-### Environment Variables
-- `AZURE_FACE_ENDPOINT` - Azure Face API endpoint URL
-
-## Project Architecture
-
-### Key Directories
-```
-├── config/
-│   └── config.js          - Main MagicMirror configuration
-├── admin/
-│   ├── index.html         - Admin panel frontend (5 tabs)
-│   └── api.js             - Admin API routes (PostgreSQL)
-├── modules/
-│   ├── default/           - Built-in MagicMirror modules
-│   ├── MMM-Face-Recognition-SMAI/  - Face recognition with Azure + voice
-│   ├── MMM-TelegramRelayDisplay/   - Telegram message display
-│   └── MMM-Appointments/  - Appointment scheduler module
-├── backend/
-│   ├── db/                - Database layer
-│   │   ├── index.js       - Database connection pool
-│   │   ├── repositories.js - Data access layer (CRUD)
-│   │   └── migrations/    - SQL migration scripts
-│   ├── telegram_bot.py    - Telegram bot (asyncpg)
-│   └── db_client.py       - Python database client
-├── server.js              - Main server (proxy + admin API)
-├── js/                    - Core MagicMirror files
-├── css/                   - Stylesheets
-└── translations/          - Language files
-```
-
-### Custom Modules
-
-#### MMM-Face-Recognition-SMAI
-- **Purpose:** Real face detection (Azure) + real voice commands (Web Speech API)
-- **Features:** Camera access, Azure Face API integration, speech recognition, TTS
-- **Files:** `MMM-Face-Recognition-SMAI.js`, `node_helper.js`, CSS
-
-#### MMM-TelegramRelayDisplay
-- **Purpose:** Display messages sent from Telegram/admin
-- **Files:** `MMM-TelegramRelayDisplay.js`, `node_helper.js`, CSS
-
-#### MMM-Appointments
-- **Purpose:** Show and manage appointments
-- **Files:** `MMM-Appointments.js`, `node_helper.js`, CSS
-
-### API Endpoints
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/budget` | GET | Get budget data and transactions |
-| `/api/budget/transaction` | POST | Add a new earning |
-| `/api/budget/goals` | POST | Update weekly/monthly goals |
-| `/api/appointments` | GET | Get appointments list |
-| `/api/appointments` | POST | Add new appointment |
-| `/api/services` | GET | Get all services |
-| `/api/services` | POST | Create a new service |
-| `/api/services/:id` | PUT | Update a service |
-| `/api/users` | GET | Get all registered users |
-| `/api/users` | POST | Register a new user |
-| `/api/telegram/messages` | GET | Get message history |
-| `/api/telegram/send` | POST | Send message to mirror |
-| `/api/mirror/command` | POST | Send command to mirror |
-
-### Data Storage
-All data is persisted in PostgreSQL with the following tables:
-- **users:** Registered customers with face descriptors
-- **services:** Available services with prices/durations
-- **appointments:** Scheduled appointments with service references
-- **transactions:** Earnings and budget tracking
-- **messages:** Telegram message history
-- **budget_targets:** Weekly/monthly goal amounts
-
-## Browser Requirements
-
-### For Voice Commands
-- **Chrome** or **Edge** (required for Web Speech API)
-- Microphone permission must be granted
-- HTTPS connection (provided by Replit)
-
-### For Camera/Face Recognition
-- Webcam access must be granted
-- Modern browser with `getUserMedia()` support
-
-## Configuration
-
-### Module Positions
-- **top_left:** Clock, Calendar (US Holidays)
-- **top_right:** Weather (current + forecast)
-- **middle_center:** Face Recognition (main interaction)
-- **bottom_left:** Telegram Messages
-- **bottom_right:** Appointments
-- **bottom_bar:** News feed
-
-### Replit Settings
-```javascript
-{
-  address: "0.0.0.0",    // Required for Replit
-  port: 8080,            // Internal MagicMirror port
-  ipWhitelist: [],       // Empty to allow Replit's proxy
-}
-```
-Main server runs on port 5000 and proxies to MagicMirror on port 8080.
-
-## Development
-
-### Running the Server
-The workflow "MagicMirror Server" runs:
-```bash
-bash start.sh
-```
-
-This starts the server at `http://0.0.0.0:5000`
-- Mirror: `http://0.0.0.0:5000/`
-- Admin: `http://0.0.0.0:5000/admin`
-
-### Testing Voice Commands
-1. Click "Start Listening" or "Voice Command" button
-2. Say "Mirror mirror, [command]" (e.g., "Mirror mirror, detect face")
-3. The mirror will respond with text and TTS audio
-4. Or type commands in the text input as fallback
-
-### Testing Face Recognition
-1. Click "Detect Face" button
-2. Allow camera access when prompted
-3. Look at the camera
-4. Azure Face API will analyze and respond
-
-## Deployment
-The project is configured for Replit deployment with:
-- **Deployment Type:** Autoscale
-- **Run Command:** `node server.js`
-
-## Recent Changes
-- **2025-12-01:** PostgreSQL Database Migration
-  - Migrated all data storage from JSON files to PostgreSQL (Replit Neon-backed DB)
-  - Created database layer: backend/db/index.js (connection pool), repositories.js (CRUD operations)
-  - Added SQL migration script: backend/db/migrations/001_initial_schema.sql
-  - Python Telegram bot now uses asyncpg for database operations
-  - Added Services management tab to admin panel (CRUD operations for services)
-  - MMM-TelegramRelayDisplay and MMM-Face-Recognition-SMAI now use database APIs
-  - Added user management endpoints (POST /api/users, POST /api/users/:id/recognition)
-  - Face recognition module includes retry logic for server startup timing
-
-- **2025-12-01:** Telegram Bot Stability Improvements
-  - Added explicit webhook clearing before polling starts
-  - Flushed update queue to clear stale messages
-  - Added 5-second delay for Telegram to release old connections
-  - Eliminates conflict errors when workflow restarts
-
-- **2025-11-30:** Weather & Appointment System Fixes
-  - Removed confusing sunset time display from weather module (showSun: false)
-  - Replaced mock appointment data with real Telegram booking system
-  - Fixed time slot handling with stable identifiers (slot_0900, slot_1000, etc.)
-  - Added double-booking prevention for same date/time
-  - Appointments include both `user` and `client` fields for compatibility
-  - Time slots available: 9 AM - 5 PM in 1-hour increments
-
-- **2025-11-30:** Face Detection Reliability Improvements
-  - Added retry logic (5 attempts, 2-second intervals) for auto-light warm-up scenarios
-  - Improved camera resource cleanup with proper video element teardown
-  - Fixed "Register My Face" button to work without admin pre-registration
-  - API preserves pending registration on duplicate name errors
-
-- **2025-11-30:** Telegram Message Filtering
-  - Bot commands (/start, /help, /today, /earnings) no longer displayed on mirror
-  - Only barber-relevant messages shown: customer messages, late alerts, custom text
-  - Commands filtered at both bot level (not logged) and display level (extra safety)
-
-- **2025-11-30:** Responsive Admin Panel
-  - Breakpoints at 1024px (tablet), 768px (mobile), 480px (small phone)
-  - Scrollable tab navigation on mobile with hidden scrollbars
-  - Touch-friendly buttons with 44px minimum height
-  - Single-column stacking for cards and forms on small screens
-  - Removed inline styles, created reusable CSS utility classes
-  - Landscape and touch device optimizations
-
-- **2025-11-30:** Module Configuration UI
-  - Added "Modules" tab to admin panel for non-technical users
-  - Toggle switches to enable/disable each module
-  - Position dropdowns (top_left, bottom_right, etc.)
-  - Module-specific settings (weather location, calendar URL, etc.)
-  - Save & Apply generates new config.js automatically
-  - Visual position guide showing mirror layout
-
-- **2025-11-30:** Local Face Recognition with face-api.js
-  - Integrated face-api.js for 100% local face recognition (no cloud waiting)
-  - Face descriptors (128-point arrays) stored with customer profiles
-  - Returning customers are recognized with "Welcome back!" + service history
-  - Service logging: Barber records what service each customer received
-  - Recommendations shown based on previous visits
-  - Models loaded locally (~13MB): SSD MobileNet + landmarks + recognition
-
-- **2025-11-30:** Face Registration System
-  - Admin panel registration: Barber can enter customer name and trigger camera capture
-  - Face image storage: Captures saved as files in backend/faces/ directory
-  - Face descriptors stored for matching returning customers
-  - Auto-prompt for unrecognized faces with friendly UI
-  - Voice command "mirror mirror, register" for self-registration
-  - Pending registration queue (admin initiates, mirror captures)
-
-- **2025-11-29:** Production Face & Voice Recognition
-  - Integrated Azure Face API for real face detection
-  - Added Web Speech API for real voice commands
-  - Camera access via getUserMedia()
-  - Status indicators (Camera/Voice/Azure)
-  - Visual feedback for listening state
-
-- **2025-11-29:** Full SmartMirror Feature Implementation
-  - Added MMM-TelegramRelayDisplay module for message relay
-  - Added Calendar module with US Holidays
-  - Enhanced admin panel with 3 tabs (Budget, Telegram, Controls)
-  - Expanded voice commands (12+ commands)
-  - Added mirror remote controls
-  - Updated weather to Chicago location
+This project is a **multi-tenant SaaS SmartMirror platform** designed for barbershops. It integrates a web-based smart mirror system, built on MagicMirror², with **real face recognition** (Azure Face API + face-api.js) and **real voice commands** (Web Speech API). Each barbershop tenant can manage multiple mirrors and barbers, supporting role-based access where Admins oversee the entire shop (barbers, services, mirrors, appointments, budget) and Barbers manage their own appointments and earnings. The platform aims to enhance the barbershop experience through interactive mirror displays and streamlined management tools.
 
 ## User Preferences
 - Budget tracker should be admin/barber only (not on mirror)
 - Mirror should display: clock, calendar, face recognition, weather, messages, appointments, news
 - Real face and voice recognition for production use
 
-## Technical Notes
-- Face recognition uses Azure Face API (cloud-based) + local face-api.js for matching
-- Voice commands use browser's Web Speech API
-- TTS uses browser's Web Speech API
-- All data persists in PostgreSQL database (Replit Neon-backed)
-- Server proxies MagicMirror from internal port 8080 to public port 5000
-- Falls back to simulation mode if camera/microphone unavailable
-- Telegram bot uses asyncpg for async database operations
-- Node.js uses pg (node-postgres) with connection pooling
+## System Architecture
+The SmartMirror platform is built using Node.js (v20.19.3) for the main application and Python 3.11 for the Telegram bot, with PostgreSQL as the database. It follows a multi-tenant architecture with JWT authentication.
+
+### UI/UX Decisions
+- **Mirror View (`/`)**: Customer-facing display with essential information like clock, date, calendar, weather, news, today's appointments, Telegram messages, and interactive face/voice recognition.
+- **Admin Panel (`/admin`)**: A role-based management dashboard requiring authentication, offering distinct functionalities for Admin and Barber roles.
+    - **Admin Role (7 tabs)**: Budget, Services, Telegram Bot, Mirror Controls, Modules, Team, Mirrors.
+    - **Barber Role (5 tabs)**: Budget (personal earnings), Services (view only), Telegram, Mirror Controls, Modules.
+- **Responsive Admin Panel**: Designed with breakpoints for tablet, mobile, and small phone, featuring scrollable tab navigation, touch-friendly buttons, and single-column stacking for forms on small screens.
+- **Module Configuration UI**: A "Modules" tab in the admin panel allows non-technical users to enable/disable modules, set positions, and configure module-specific settings, with a visual position guide.
+
+### Technical Implementations
+- **Face Recognition**: Combines Microsoft Azure Face API for cloud-based detection of face attributes (age, gender, emotions) and local `face-api.js` for 100% local face recognition and descriptor storage. Includes a registration system via admin panel or voice command, and retries for reliability.
+- **Voice Commands**: Leverages the browser's Web Speech API for speech recognition with a "Mirror mirror..." wake phrase and text-to-speech responses.
+- **Telegram Bot Integration**: A Python-based Telegram bot (`@BarberMirrorBot`) acts as a mobile-friendly admin console, offering interactive menus for financial tracking, appointment management, customer history, mirror remote control, and message relay to the mirror.
+- **Status Indicators**: Visual cues for Camera Ready, Voice Ready, and Azure Connected.
+- **Core MagicMirror Modules**: Utilizes and customizes MagicMirror² modules for display functionalities.
+- **Custom Modules**:
+    - `MMM-Face-Recognition-SMAI`: Integrates Azure Face API and Web Speech API.
+    - `MMM-TelegramRelayDisplay`: Displays messages from Telegram/admin.
+    - `MMM-Appointments`: Shows and manages appointments.
+- **Data Persistence**: All data is stored in PostgreSQL with multi-tenant isolation:
+    - **Multi-tenant tables**: shops, barbers, mirror_devices, mirror_sessions, walk_in_queue
+    - **Core tables (shop-scoped)**: users, services, appointments, transactions, messages, budget_targets, recognition_events
+    - All tables include shop_id and/or barber_id foreign keys for data isolation
+- **JWT Authentication**: Secure token-based auth with shop_id and role claims for API access control.
+- **API Endpoints**: Comprehensive set of RESTful APIs for managing budget, appointments, services, users, Telegram messages, and mirror commands.
+
+### System Design Choices
+- **Multi-tenant architecture**: Supports multiple barbershops with isolated data.
+- **Role-based access control**: Differentiates between Admin and Barber functionalities.
+- **Client-side technologies**: Extensive use of browser APIs (getUserMedia, Web Speech API) for real-time interaction.
+- **Hybrid Face Recognition**: Blends cloud-based Azure Face API with local `face-api.js` for robust and efficient recognition.
+- **Modular Design**: MagicMirror² modules allow for flexible customization and extension.
+- **Environment Variables**: Uses environment variables for sensitive API keys and configurable endpoints.
+
+## External Dependencies
+- **Microsoft Azure Face API**: For cloud-based face detection and attribute analysis.
+- **Web Speech API**: Browser-based API for speech recognition and text-to-speech.
+- **PostgreSQL (Neon-backed Replit DB)**: Primary database for all persistent data storage.
+- **Telegram Bot API**: For integration with the `@BarberMirrorBot`.
+- **`face-api.js`**: JavaScript API for local face detection and recognition.
+- **Node.js `pg` (node-postgres)**: PostgreSQL client for Node.js.
+- **Python `asyncpg`**: Asynchronous PostgreSQL client for Python.
+- **MagicMirror²**: The foundational open-source smart mirror platform.
+- **NY Times API**: For news feed display on the mirror.

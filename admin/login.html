@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartMirror Login</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+        }
+
+        .login-container {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 24px;
+            padding: 48px;
+            width: 100%;
+            max-width: 420px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .logo h1 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .logo h1 span {
+            color: #7c3aed;
+        }
+
+        .logo p {
+            color: #a0a0a0;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            color: #a0a0a0;
+            margin-bottom: 8px;
+        }
+
+        .form-group select,
+        .form-group input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+            font-size: 16px;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .form-group select:focus,
+        .form-group input:focus {
+            border-color: #7c3aed;
+            background: rgba(124, 58, 237, 0.1);
+        }
+
+        .form-group select option {
+            background: #1a1a2e;
+            color: #fff;
+        }
+
+        .pin-input {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+
+        .pin-digit {
+            width: 56px;
+            height: 64px;
+            text-align: center;
+            font-size: 24px;
+            font-weight: 600;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .pin-digit:focus {
+            border-color: #7c3aed;
+            background: rgba(124, 58, 237, 0.1);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 16px;
+            background: #7c3aed;
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 24px;
+        }
+
+        .btn:hover {
+            background: #6d28d9;
+            transform: translateY(-2px);
+        }
+
+        .btn:disabled {
+            background: #4a4a6a;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .error-message {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #ef4444;
+            padding: 12px 16px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.8s linear infinite;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .shop-selector {
+            margin-bottom: 32px;
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            margin: 24px 0;
+            color: #a0a0a0;
+            font-size: 12px;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .divider::before { margin-right: 16px; }
+        .divider::after { margin-left: 16px; }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="logo">
+            <h1>Smart<span>Mirror</span></h1>
+            <p>Barber Admin Panel</p>
+        </div>
+
+        <div id="errorMessage" class="error-message"></div>
+
+        <form id="loginForm">
+            <div class="form-group shop-selector">
+                <label>Select Your Shop</label>
+                <select id="shopSelect" required>
+                    <option value="">Loading shops...</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Enter Your PIN</label>
+                <div class="pin-input">
+                    <input type="password" class="pin-digit" maxlength="1" pattern="[0-9]" inputmode="numeric" required>
+                    <input type="password" class="pin-digit" maxlength="1" pattern="[0-9]" inputmode="numeric" required>
+                    <input type="password" class="pin-digit" maxlength="1" pattern="[0-9]" inputmode="numeric" required>
+                    <input type="password" class="pin-digit" maxlength="1" pattern="[0-9]" inputmode="numeric" required>
+                </div>
+            </div>
+
+            <button type="submit" class="btn" id="loginBtn">
+                Sign In
+            </button>
+        </form>
+    </div>
+
+    <script>
+        const shopSelect = document.getElementById('shopSelect');
+        const loginForm = document.getElementById('loginForm');
+        const loginBtn = document.getElementById('loginBtn');
+        const errorMessage = document.getElementById('errorMessage');
+        const pinInputs = document.querySelectorAll('.pin-digit');
+
+        if (localStorage.getItem('authToken')) {
+            fetch('/api/auth/me', {
+                headers: { 'Authorization': 'Bearer ' + localStorage.getItem('authToken') }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.href = '/admin';
+                }
+            })
+            .catch(() => {
+                localStorage.removeItem('authToken');
+            });
+        }
+
+        async function loadShops() {
+            try {
+                const response = await fetch('/api/auth/shops');
+                const data = await response.json();
+                
+                if (data.success && data.shops.length > 0) {
+                    shopSelect.innerHTML = data.shops.map(shop => 
+                        `<option value="${shop.slug}">${shop.name}</option>`
+                    ).join('');
+                } else {
+                    shopSelect.innerHTML = '<option value="demo">Demo Barbershop</option>';
+                }
+            } catch (error) {
+                shopSelect.innerHTML = '<option value="demo">Demo Barbershop</option>';
+            }
+        }
+
+        pinInputs.forEach((input, index) => {
+            input.addEventListener('input', (e) => {
+                const value = e.target.value.replace(/\D/g, '');
+                e.target.value = value;
+                
+                if (value && index < pinInputs.length - 1) {
+                    pinInputs[index + 1].focus();
+                }
+            });
+
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Backspace' && !e.target.value && index > 0) {
+                    pinInputs[index - 1].focus();
+                }
+            });
+
+            input.addEventListener('paste', (e) => {
+                e.preventDefault();
+                const paste = (e.clipboardData || window.clipboardData).getData('text');
+                const digits = paste.replace(/\D/g, '').slice(0, 4);
+                
+                digits.split('').forEach((digit, i) => {
+                    if (pinInputs[i]) {
+                        pinInputs[i].value = digit;
+                    }
+                });
+                
+                if (digits.length === 4) {
+                    loginForm.dispatchEvent(new Event('submit'));
+                }
+            });
+        });
+
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const pin = Array.from(pinInputs).map(i => i.value).join('');
+            const shopSlug = shopSelect.value;
+
+            if (pin.length !== 4) {
+                showError('Please enter your 4-digit PIN');
+                return;
+            }
+
+            loginBtn.disabled = true;
+            loginBtn.innerHTML = '<span class="loading"></span> Signing in...';
+            errorMessage.classList.remove('show');
+
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        shop_slug: shopSlug,
+                        pin: pin
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    localStorage.setItem('authToken', data.token);
+                    localStorage.setItem('authUser', JSON.stringify(data.user));
+                    window.location.href = '/admin';
+                } else {
+                    showError(data.error || 'Invalid credentials');
+                    pinInputs.forEach(i => i.value = '');
+                    pinInputs[0].focus();
+                }
+            } catch (error) {
+                showError('Connection error. Please try again.');
+            } finally {
+                loginBtn.disabled = false;
+                loginBtn.innerHTML = 'Sign In';
+            }
+        });
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.classList.add('show');
+        }
+
+        loadShops();
+        pinInputs[0].focus();
+    </script>
+</body>
+</html>

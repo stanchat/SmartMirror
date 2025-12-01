@@ -1012,19 +1012,67 @@
             background: rgba(16, 185, 129, 0.2);
             color: #10b981;
         }
+        .user-display {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .user-name {
+            font-weight: 500;
+            color: #fff;
+        }
+        
+        .user-role {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .user-role.admin {
+            background: rgba(124, 58, 237, 0.3);
+            color: #a78bfa;
+        }
+        
+        .user-role.barber {
+            background: rgba(16, 185, 129, 0.3);
+            color: #10b981;
+        }
+        
+        .logout-btn {
+            padding: 8px 16px;
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #ef4444;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+        
+        .logout-btn:hover {
+            background: rgba(239, 68, 68, 0.3);
+        }
     </style>
 </head>
 <body>
     <header class="header">
         <h1>🪞 <span>SmartMirror</span> Admin</h1>
+        <div id="userDisplay" class="user-display">
+            <span class="user-name">Loading...</span>
+        </div>
     </header>
 
     <div class="tabs">
         <button class="tab active" onclick="switchTab('budget')">💰 Budget</button>
         <button class="tab" onclick="switchTab('services')">✂️ Services</button>
+        <button class="tab admin-only" onclick="switchTab('barbers')">👥 Team</button>
+        <button class="tab admin-only" onclick="switchTab('mirrors')">🪞 Mirrors</button>
         <button class="tab" onclick="switchTab('telegram')">💬 Telegram Bot</button>
         <button class="tab" onclick="switchTab('controls')">🎛️ Mirror Controls</button>
-        <button class="tab" onclick="switchTab('modules')">🧩 Modules</button>
+        <button class="tab admin-only" onclick="switchTab('modules')">🧩 Modules</button>
     </div>
 
     <div class="container">
@@ -1110,6 +1158,38 @@
                 </p>
                 <div id="servicesList" class="services-grid">
                     <div class="loading">Loading services...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Barbers Tab (Admin Only) -->
+        <div id="barbers-tab" class="tab-content admin-only">
+            <div class="section">
+                <div class="section-header">
+                    <h2>Team Management</h2>
+                    <button class="btn" onclick="openAddBarberModal()">+ Add Barber</button>
+                </div>
+                <p class="section-description">
+                    Manage your barbers and their access levels. Admins can manage the entire shop, barbers can only view their own data.
+                </p>
+                <div id="barbersList" class="services-grid">
+                    <div class="loading">Loading team...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mirrors Tab (Admin Only) -->
+        <div id="mirrors-tab" class="tab-content admin-only">
+            <div class="section">
+                <div class="section-header">
+                    <h2>Mirror Devices</h2>
+                    <button class="btn" onclick="openAddMirrorModal()">+ Add Mirror</button>
+                </div>
+                <p class="section-description">
+                    Register and manage SmartMirror devices. Generate registration codes to connect new mirrors to your shop.
+                </p>
+                <div id="mirrorsList" class="services-grid">
+                    <div class="loading">Loading mirrors...</div>
                 </div>
             </div>
         </div>
@@ -1402,7 +1482,133 @@
         </div>
     </div>
 
+    <!-- Add/Edit Barber Modal -->
+    <div class="modal" id="barberModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="barberModalTitle">Add Barber</h3>
+                <button class="close-btn" onclick="closeBarberModal()">&times;</button>
+            </div>
+            <form id="barberForm">
+                <input type="hidden" id="barberId">
+                <div class="form-group">
+                    <label for="barberName">Name</label>
+                    <input type="text" id="barberName" placeholder="John Smith" required>
+                </div>
+                <div class="form-group">
+                    <label for="barberEmail">Email (optional)</label>
+                    <input type="email" id="barberEmail" placeholder="john@example.com">
+                </div>
+                <div class="form-group">
+                    <label for="barberPhone">Phone (optional)</label>
+                    <input type="tel" id="barberPhone" placeholder="555-1234">
+                </div>
+                <div class="form-group">
+                    <label for="barberPin">PIN Code (4 digits)</label>
+                    <input type="text" id="barberPin" placeholder="1234" required maxlength="4" pattern="[0-9]{4}">
+                </div>
+                <div class="form-group">
+                    <label for="barberRole">Role</label>
+                    <select id="barberRole">
+                        <option value="barber">Barber</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="barberColor">Color</label>
+                    <input type="color" id="barberColor" value="#3498db">
+                </div>
+                <button type="submit" class="btn" style="width: 100%; margin-top: 16px;">Save Barber</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add/Edit Mirror Modal -->
+    <div class="modal" id="mirrorModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="mirrorModalTitle">Add Mirror</h3>
+                <button class="close-btn" onclick="closeMirrorModal()">&times;</button>
+            </div>
+            <form id="mirrorForm">
+                <input type="hidden" id="mirrorId">
+                <div class="form-group">
+                    <label for="mirrorLabel">Mirror Name</label>
+                    <input type="text" id="mirrorLabel" placeholder="Station 1" required>
+                </div>
+                <button type="submit" class="btn" style="width: 100%; margin-top: 16px;">Create Mirror</button>
+            </form>
+            <div id="mirrorCodeDisplay" style="display: none; margin-top: 20px; text-align: center;">
+                <p style="color: #a0a0a0; margin-bottom: 8px;">Registration Code:</p>
+                <div style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #7c3aed;" id="registrationCode"></div>
+                <p style="color: #666; font-size: 12px; margin-top: 8px;">Enter this code on the mirror to connect it</p>
+            </div>
+        </div>
+    </div>
+
     <script>
+        const AUTH_TOKEN = localStorage.getItem('authToken');
+        const AUTH_USER = JSON.parse(localStorage.getItem('authUser') || 'null');
+        
+        async function checkAuth() {
+            if (!AUTH_TOKEN) {
+                window.location.href = '/admin/login.html';
+                return false;
+            }
+            
+            try {
+                const response = await fetch('/api/auth/me', {
+                    headers: { 'Authorization': 'Bearer ' + AUTH_TOKEN }
+                });
+                const data = await response.json();
+                
+                if (!data.success) {
+                    localStorage.removeItem('authToken');
+                    localStorage.removeItem('authUser');
+                    window.location.href = '/admin/login.html';
+                    return false;
+                }
+                
+                updateUserDisplay(data.user);
+                return true;
+            } catch (error) {
+                console.error('Auth check failed:', error);
+                return true;
+            }
+        }
+        
+        function updateUserDisplay(user) {
+            const userEl = document.getElementById('userDisplay');
+            if (userEl) {
+                userEl.innerHTML = `
+                    <span class="user-name">${user.name}</span>
+                    <span class="user-role ${user.role}">${user.role}</span>
+                    <button class="logout-btn" onclick="logout()">Logout</button>
+                `;
+            }
+            
+            if (user.role !== 'admin') {
+                document.querySelectorAll('.admin-only').forEach(el => {
+                    el.style.display = 'none';
+                });
+            }
+        }
+        
+        function logout() {
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('authUser');
+            window.location.href = '/admin/login.html';
+        }
+        
+        function getAuthHeaders() {
+            return {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + AUTH_TOKEN
+            };
+        }
+        
+        checkAuth();
+
         let budgetData = null;
 
         function switchTab(tabName) {
@@ -2126,8 +2332,260 @@
             origSwitchTab(tabName);
             if (tabName === 'modules') {
                 loadModuleConfig();
+            } else if (tabName === 'barbers') {
+                loadBarbers();
+            } else if (tabName === 'mirrors') {
+                loadMirrors();
             }
         };
+
+        async function loadBarbers() {
+            try {
+                const response = await fetch('/api/auth/barbers', {
+                    headers: getAuthHeaders()
+                });
+                const data = await response.json();
+                renderBarbers(data.barbers || []);
+            } catch (error) {
+                console.error('Failed to load barbers:', error);
+                document.getElementById('barbersList').innerHTML = 
+                    '<div class="empty-state">Failed to load team</div>';
+            }
+        }
+
+        function renderBarbers(barbers) {
+            const container = document.getElementById('barbersList');
+            if (barbers.length === 0) {
+                container.innerHTML = '<div class="empty-state">No team members yet</div>';
+                return;
+            }
+
+            container.innerHTML = barbers.map(b => `
+                <div class="service-card ${!b.is_active ? 'service-inactive' : ''}">
+                    <div class="service-info">
+                        <span class="service-name" style="display: flex; align-items: center; gap: 8px;">
+                            <span style="width: 12px; height: 12px; border-radius: 50%; background: ${b.color || '#3498db'}"></span>
+                            ${b.name}
+                        </span>
+                        <span class="service-description">${b.email || 'No email'}</span>
+                        <span class="badge ${b.role === 'admin' ? 'active' : ''}">${b.role}</span>
+                    </div>
+                    <div class="service-actions">
+                        <button class="btn btn-sm btn-secondary" onclick="editBarber(${b.id})">Edit</button>
+                        ${b.id !== AUTH_USER?.id ? `<button class="btn btn-sm btn-danger" onclick="deleteBarber(${b.id})">Delete</button>` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function openAddBarberModal() {
+            document.getElementById('barberModalTitle').textContent = 'Add Barber';
+            document.getElementById('barberId').value = '';
+            document.getElementById('barberName').value = '';
+            document.getElementById('barberEmail').value = '';
+            document.getElementById('barberPhone').value = '';
+            document.getElementById('barberPin').value = '';
+            document.getElementById('barberRole').value = 'barber';
+            document.getElementById('barberColor').value = '#3498db';
+            document.getElementById('barberModal').classList.add('active');
+        }
+
+        function closeBarberModal() {
+            document.getElementById('barberModal').classList.remove('active');
+        }
+
+        async function editBarber(id) {
+            try {
+                const response = await fetch('/api/auth/barbers', {
+                    headers: getAuthHeaders()
+                });
+                const data = await response.json();
+                const barber = data.barbers.find(b => b.id === id);
+                
+                if (barber) {
+                    document.getElementById('barberModalTitle').textContent = 'Edit Barber';
+                    document.getElementById('barberId').value = barber.id;
+                    document.getElementById('barberName').value = barber.name;
+                    document.getElementById('barberEmail').value = barber.email || '';
+                    document.getElementById('barberPhone').value = barber.phone || '';
+                    document.getElementById('barberPin').value = barber.pin_code || '';
+                    document.getElementById('barberRole').value = barber.role;
+                    document.getElementById('barberColor').value = barber.color || '#3498db';
+                    document.getElementById('barberModal').classList.add('active');
+                }
+            } catch (error) {
+                alert('Failed to load barber');
+            }
+        }
+
+        async function deleteBarber(id) {
+            if (!confirm('Are you sure you want to remove this team member?')) return;
+            
+            try {
+                const response = await fetch(`/api/auth/barbers/${id}`, {
+                    method: 'DELETE',
+                    headers: getAuthHeaders()
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    loadBarbers();
+                } else {
+                    alert(data.error || 'Failed to delete');
+                }
+            } catch (error) {
+                alert('Failed to delete team member');
+            }
+        }
+
+        document.getElementById('barberForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const id = document.getElementById('barberId').value;
+            const barberData = {
+                name: document.getElementById('barberName').value,
+                email: document.getElementById('barberEmail').value || null,
+                phone: document.getElementById('barberPhone').value || null,
+                pin_code: document.getElementById('barberPin').value,
+                role: document.getElementById('barberRole').value,
+                color: document.getElementById('barberColor').value
+            };
+
+            try {
+                const url = id ? `/api/auth/barbers/${id}` : '/api/auth/barbers';
+                const method = id ? 'PUT' : 'POST';
+                
+                const response = await fetch(url, {
+                    method,
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify(barberData)
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    closeBarberModal();
+                    loadBarbers();
+                } else {
+                    alert(data.error || 'Failed to save barber');
+                }
+            } catch (error) {
+                alert('Failed to save barber');
+            }
+        });
+
+        async function loadMirrors() {
+            try {
+                const response = await fetch('/api/auth/mirrors', {
+                    headers: getAuthHeaders()
+                });
+                const data = await response.json();
+                renderMirrors(data.mirrors || []);
+            } catch (error) {
+                console.error('Failed to load mirrors:', error);
+                document.getElementById('mirrorsList').innerHTML = 
+                    '<div class="empty-state">Failed to load mirrors</div>';
+            }
+        }
+
+        function renderMirrors(mirrors) {
+            const container = document.getElementById('mirrorsList');
+            if (mirrors.length === 0) {
+                container.innerHTML = '<div class="empty-state">No mirrors registered yet</div>';
+                return;
+            }
+
+            container.innerHTML = mirrors.map(m => `
+                <div class="service-card ${!m.is_active ? 'service-inactive' : ''}">
+                    <div class="service-info">
+                        <span class="service-name">${m.label}</span>
+                        <span class="service-description">
+                            Status: <span style="color: ${m.status === 'online' ? '#22c55e' : '#ef4444'}">${m.status}</span>
+                        </span>
+                        ${m.registration_code ? `<span class="badge">Code: ${m.registration_code}</span>` : ''}
+                    </div>
+                    <div class="service-actions">
+                        <button class="btn btn-sm btn-secondary" onclick="regenerateCode(${m.id})">New Code</button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteMirror(${m.id})">Delete</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function openAddMirrorModal() {
+            document.getElementById('mirrorModalTitle').textContent = 'Add Mirror';
+            document.getElementById('mirrorId').value = '';
+            document.getElementById('mirrorLabel').value = '';
+            document.getElementById('mirrorCodeDisplay').style.display = 'none';
+            document.getElementById('mirrorModal').classList.add('active');
+        }
+
+        function closeMirrorModal() {
+            document.getElementById('mirrorModal').classList.remove('active');
+        }
+
+        async function regenerateCode(id) {
+            try {
+                const response = await fetch(`/api/auth/mirrors/${id}/regenerate-code`, {
+                    method: 'POST',
+                    headers: getAuthHeaders()
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    loadMirrors();
+                    alert('New registration code: ' + data.mirror.registration_code);
+                } else {
+                    alert(data.error || 'Failed to regenerate code');
+                }
+            } catch (error) {
+                alert('Failed to regenerate code');
+            }
+        }
+
+        async function deleteMirror(id) {
+            if (!confirm('Are you sure you want to remove this mirror?')) return;
+            
+            try {
+                const response = await fetch(`/api/auth/mirrors/${id}`, {
+                    method: 'DELETE',
+                    headers: getAuthHeaders()
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    loadMirrors();
+                } else {
+                    alert(data.error || 'Failed to delete');
+                }
+            } catch (error) {
+                alert('Failed to delete mirror');
+            }
+        }
+
+        document.getElementById('mirrorForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const label = document.getElementById('mirrorLabel').value;
+
+            try {
+                const response = await fetch('/api/auth/mirrors', {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ label })
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    document.getElementById('registrationCode').textContent = data.mirror.registration_code;
+                    document.getElementById('mirrorCodeDisplay').style.display = 'block';
+                    loadMirrors();
+                } else {
+                    alert(data.error || 'Failed to create mirror');
+                }
+            } catch (error) {
+                alert('Failed to create mirror');
+            }
+        });
 
         loadBudget();
         setInterval(loadBudget, 30000);

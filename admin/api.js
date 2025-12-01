@@ -2,20 +2,47 @@ const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const db = require('../backend/db');
-const { ServicesRepo, UsersRepo, AppointmentsRepo, TransactionsRepo, MessagesRepo, BudgetRepo } = require('../backend/db/repositories');
+const { ServicesRepo, UsersRepo, AppointmentsRepo, TransactionsRepo, MessagesRepo, BudgetRepo, ShopsRepo } = require('../backend/db/repositories');
+const { authMiddleware, requireAdmin, ROLES } = require('../backend/auth/middleware');
 
 const router = express.Router();
+
+function getShopId(req) {
+    const shopId = req.auth?.shop_id;
+    if (!shopId) {
+        throw new Error('Shop ID required');
+    }
+    return shopId;
+}
+
+function getBarberId(req) {
+    return req.auth?.barber_id || null;
+}
+
+function isAdmin(req) {
+    return req.auth?.role === ROLES.ADMIN;
+}
+
+function requireShopId(req, res, next) {
+    if (!req.auth?.shop_id) {
+        return res.status(401).json({ success: false, error: 'Authentication required' });
+    }
+    next();
+}
 
 router.get('/health', async (req, res) => {
     const health = await db.healthCheck();
     res.json(health);
 });
 
-router.get('/budget', async (req, res) => {
+router.get('/budget', authMiddleware, requireShopId, async (req, res) => {
     try {
+        const shopId = getShopId(req);
+        const barberId = isAdmin(req) ? null : getBarberId(req);
+        
         const [summary, transactions] = await Promise.all([
-            BudgetRepo.getBudgetSummary(),
-            TransactionsRepo.getRecent(10)
+            BudgetRepo.getBudgetSummary(shopId, barberId),
+            TransactionsRepo.getRecent(shopId, barberId, 10)
         ]);
         
         const weeklyProgress = Math.round((summary.current_week_earned / summary.weekly_goal) * 1000) / 10;
@@ -37,7 +64,8 @@ router.get('/budget', async (req, res) => {
                 date: t.occurred_at,
                 amount: t.amount_cents / 100,
                 service: t.service_name,
-                client: t.client_name
+                client: t.client_name,
+                barber: t.barber_name
             }))
         });
     } catch (err) {
@@ -46,12 +74,20 @@ router.get('/budget', async (req, res) => {
     }
 });
 
-router.post('/budget/transaction', async (req, res) => {
+router.post('/budget/transaction', authMiddleware, requireShopId, async (req, res) => {
     try {
         const { amount, service, client } = req.body;
         const amountCents = Math.round(parseFloat(amount) * 100) || 0;
+        const shopId = getShopId(req);
+        const barberId = getBarberId(req);
+        
+        if (!barberId) {
+            return res.status(400).json({ success: false, error: 'Barber ID required' });
+        }
         
         const transaction = await TransactionsRepo.create({
+            shop_id: shopId,
+            barber_id: barberId,
             amount_cents: amountCents,
             service_name: service || 'Service',
             client_name: client || 'Client'
@@ -73,15 +109,16 @@ router.post('/budget/transaction', async (req, res) => {
     }
 });
 
-router.post('/budget/goals', async (req, res) => {
+router.post('/budget/goals', authMiddleware, requireAdmin, async (req, res) => {
     try {
         const { weekly_goal, monthly_goal } = req.body;
+        const shopId = getShopId(req);
         
         if (weekly_goal !== undefined) {
-            await BudgetRepo.updateTarget('weekly', Math.round(parseFloat(weekly_goal) * 100));
+            await BudgetRepo.updateTarget('weekly', Math.round(parseFloat(weekly_goal) * 100), shopId);
         }
         if (monthly_goal !== undefined) {
-            await BudgetRepo.updateTarget('monthly', Math.round(parseFloat(monthly_goal) * 100));
+            await BudgetRepo.updateTarget('monthly', Math.round(parseFloat(monthly_goal) * 100), shopId);
         }
         
         res.json({
@@ -94,15 +131,17 @@ router.post('/budget/goals', async (req, res) => {
     }
 });
 
-router.get('/appointments', async (req, res) => {
+router.get('/appointments', authMiddleware, requireShopId, async (req, res) => {
     try {
         const { date } = req.query;
+        const shopId = getShopId(req);
+        const barberId = isAdmin(req) ? null : getBarberId(req);
         let appointments;
         
         if (date) {
-            appointments = await AppointmentsRepo.getByDate(date);
+            appointments = await AppointmentsRepo.getByDate(date, shopId, barberId);
         } else {
-            appointments = await AppointmentsRepo.getAll();
+            appointments = await AppointmentsRepo.getAll(shopId, barberId);
         }
         
         const SLOT_TO_TIME = {
@@ -120,7 +159,7 @@ router.get('/appointments', async (req, res) => {
                 service: a.service_name || 'Service',
                 time: SLOT_TO_TIME[a.time_slot] || a.time_slot,
                 date: a.appointment_date,
-                barber: a.barber,
+                barber: a.barber_name || a.barber,
                 status: a.status
             })),
             count: appointments.length
@@ -131,9 +170,10 @@ router.get('/appointments', async (req, res) => {
     }
 });
 
-router.post('/appointments', async (req, res) => {
+router.post('/appointments', authMiddleware, requireShopId, async (req, res) => {
     try {
         const { user, service, time, date, barber } = req.body;
+        const shopId = getShopId(req);
         
         const TIME_TO_SLOT = {
             '9:00 AM': 'slot_0900', '10:00 AM': 'slot_1000', '11:00 AM': 'slot_1100',
@@ -141,10 +181,11 @@ router.post('/appointments', async (req, res) => {
             '3:00 PM': 'slot_1500', '4:00 PM': 'slot_1600', '5:00 PM': 'slot_1700'
         };
         
-        const serviceResult = await db.query('SELECT id FROM services WHERE LOWER(name) = LOWER($1)', [service]);
+        const serviceResult = await db.query('SELECT id FROM services WHERE LOWER(name) = LOWER($1) AND shop_id = $2', [service, shopId]);
         const serviceId = serviceResult.rows.length > 0 ? serviceResult.rows[0].id : null;
         
         const appointment = await AppointmentsRepo.create({
+            shop_id: shopId,
             client_name: user,
             service_id: serviceId,
             appointment_date: date === 'today' ? new Date().toISOString().split('T')[0] : date,
@@ -165,8 +206,16 @@ router.post('/appointments', async (req, res) => {
     }
 });
 
-router.delete('/appointments/:id', async (req, res) => {
+router.delete('/appointments/:id', authMiddleware, requireShopId, async (req, res) => {
     try {
+        const shopId = getShopId(req);
+        const appointments = await AppointmentsRepo.getAll(shopId);
+        const appt = appointments.find(a => a.id === parseInt(req.params.id));
+        
+        if (!appt) {
+            return res.status(404).json({ success: false, error: 'Appointment not found' });
+        }
+        
         await AppointmentsRepo.cancel(parseInt(req.params.id));
         res.json({ success: true, message: 'Appointment cancelled' });
     } catch (err) {
@@ -175,10 +224,12 @@ router.delete('/appointments/:id', async (req, res) => {
     }
 });
 
-router.get('/services', async (req, res) => {
+router.get('/services', authMiddleware, requireShopId, async (req, res) => {
     try {
         const activeOnly = req.query.all !== 'true';
-        const services = await ServicesRepo.getAll(activeOnly);
+        const shopId = getShopId(req);
+        
+        const services = await ServicesRepo.getAll(shopId, activeOnly);
         
         res.json({
             success: true,
@@ -197,11 +248,13 @@ router.get('/services', async (req, res) => {
     }
 });
 
-router.post('/services', async (req, res) => {
+router.post('/services', authMiddleware, requireAdmin, async (req, res) => {
     try {
         const { name, description, duration, price } = req.body;
+        const shopId = getShopId(req);
         
         const service = await ServicesRepo.create({
+            shop_id: shopId,
             name: name,
             description: description || '',
             duration_minutes: parseInt(duration) || 30,
@@ -227,9 +280,15 @@ router.post('/services', async (req, res) => {
     }
 });
 
-router.put('/services/:id', async (req, res) => {
+router.put('/services/:id', authMiddleware, requireAdmin, async (req, res) => {
     try {
         const { name, description, duration, price, is_active } = req.body;
+        const shopId = getShopId(req);
+        
+        const existingService = await ServicesRepo.getById(parseInt(req.params.id));
+        if (!existingService || existingService.shop_id !== shopId) {
+            return res.status(404).json({ success: false, error: 'Service not found' });
+        }
         
         const service = await ServicesRepo.update(parseInt(req.params.id), {
             name: name,
@@ -257,8 +316,15 @@ router.put('/services/:id', async (req, res) => {
     }
 });
 
-router.delete('/services/:id', async (req, res) => {
+router.delete('/services/:id', authMiddleware, requireAdmin, async (req, res) => {
     try {
+        const shopId = getShopId(req);
+        const existingService = await ServicesRepo.getById(parseInt(req.params.id));
+        
+        if (!existingService || existingService.shop_id !== shopId) {
+            return res.status(404).json({ success: false, error: 'Service not found' });
+        }
+        
         await ServicesRepo.delete(parseInt(req.params.id));
         res.json({ success: true, message: 'Service deactivated' });
     } catch (err) {
@@ -267,9 +333,10 @@ router.delete('/services/:id', async (req, res) => {
     }
 });
 
-router.get('/users', async (req, res) => {
+router.get('/users', authMiddleware, requireShopId, async (req, res) => {
     try {
-        const users = await UsersRepo.getAll();
+        const shopId = getShopId(req);
+        const users = await UsersRepo.getAll(shopId);
         
         res.json({
             success: true,
@@ -289,15 +356,17 @@ router.get('/users', async (req, res) => {
     }
 });
 
-router.post('/users', async (req, res) => {
+router.post('/users', authMiddleware, requireShopId, async (req, res) => {
     try {
         const { name, azure_person_id, face_descriptor } = req.body;
+        const shopId = getShopId(req);
         
         if (!name) {
             return res.status(400).json({ success: false, error: 'Name is required' });
         }
         
         const user = await UsersRepo.create({
+            shop_id: shopId,
             name: name,
             azure_person_id: azure_person_id || null,
             face_descriptor: face_descriptor || null
@@ -333,9 +402,10 @@ router.post('/users/:id/recognition', async (req, res) => {
     }
 });
 
-router.get('/users/pending', async (req, res) => {
+router.get('/users/pending', authMiddleware, requireShopId, async (req, res) => {
     try {
-        const pending = await UsersRepo.getPending();
+        const shopId = getShopId(req);
+        const pending = await UsersRepo.getPending(shopId);
         res.json({ success: true, pending: pending });
     } catch (err) {
         console.error('Pending user error:', err);
@@ -369,9 +439,10 @@ router.post('/users/:id/face', async (req, res) => {
     }
 });
 
-router.get('/telegram/messages', async (req, res) => {
+router.get('/telegram/messages', authMiddleware, requireShopId, async (req, res) => {
     try {
-        const messages = await MessagesRepo.getRecent(20);
+        const shopId = getShopId(req);
+        const messages = await MessagesRepo.getRecent(shopId, 20);
         
         res.json({
             success: true,
@@ -391,17 +462,20 @@ router.get('/telegram/messages', async (req, res) => {
     }
 });
 
-router.post('/telegram/send', async (req, res) => {
+router.post('/telegram/send', authMiddleware, requireShopId, async (req, res) => {
     try {
         const { message } = req.body;
+        const shopId = getShopId(req);
+        const barberId = getBarberId(req);
         
         await MessagesRepo.create({
+            shop_id: shopId,
+            barber_id: barberId,
             sender: 'Admin',
             text: message,
             chat_id: 0
         });
         
-        const fs = require('fs');
         const logFile = path.join(__dirname, '../backend/telegram_log.json');
         let logs = [];
         try {
@@ -427,17 +501,20 @@ router.post('/telegram/send', async (req, res) => {
     }
 });
 
-router.post('/mirror/command', async (req, res) => {
+router.post('/mirror/command', authMiddleware, requireShopId, async (req, res) => {
     try {
         const { command } = req.body;
+        const shopId = getShopId(req);
+        const barberId = getBarberId(req);
         
         await MessagesRepo.create({
+            shop_id: shopId,
+            barber_id: barberId,
             sender: 'Admin',
             text: `[COMMAND] ${command}`,
             chat_id: 0
         });
         
-        const fs = require('fs');
         const logFile = path.join(__dirname, '../backend/telegram_log.json');
         let logs = [];
         try {
@@ -511,7 +588,7 @@ router.get('/modules', (req, res) => {
     }
 });
 
-router.post('/modules', (req, res) => {
+router.post('/modules', authMiddleware, requireAdmin, (req, res) => {
     try {
         const { modules } = req.body;
         const configPath = path.join(__dirname, '../config/config.js');
@@ -592,7 +669,7 @@ if (typeof module !== "undefined") { module.exports = config; }
     }
 });
 
-router.post('/config', (req, res) => {
+router.post('/config', authMiddleware, requireAdmin, (req, res) => {
     try {
         const { modules } = req.body;
         const configPath = path.join(__dirname, '../config/config.js');

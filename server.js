@@ -10,12 +10,19 @@ const MM_PORT = 8080;
 app.use(express.json());
 
 const adminApi = require('./admin/api');
+const authRoutes = require('./backend/auth/routes');
+
+app.use('/api/auth', authRoutes);
 app.use('/api', adminApi);
 
 app.use('/admin', express.static(path.join(__dirname, 'admin')));
 
 app.get('/admin', (req, res) => {
     res.sendFile(path.join(__dirname, 'admin', 'index.html'));
+});
+
+app.get('/admin/login', (req, res) => {
+    res.sendFile(path.join(__dirname, 'admin', 'login.html'));
 });
 
 console.log('Starting Telegram Bot...');
