@@ -1,707 +1,524 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
+const db = require('../backend/db');
+const { ServicesRepo, UsersRepo, AppointmentsRepo, TransactionsRepo, MessagesRepo, BudgetRepo } = require('../backend/db/repositories');
 
 const router = express.Router();
-const dataFile = path.join(__dirname, '../backend/data.json');
 
-function loadData() {
+router.get('/health', async (req, res) => {
+    const health = await db.healthCheck();
+    res.json(health);
+});
+
+router.get('/budget', async (req, res) => {
     try {
-        if (fs.existsSync(dataFile)) {
-            return JSON.parse(fs.readFileSync(dataFile, 'utf8'));
+        const [summary, transactions] = await Promise.all([
+            BudgetRepo.getBudgetSummary(),
+            TransactionsRepo.getRecent(10)
+        ]);
+        
+        const weeklyProgress = Math.round((summary.current_week_earned / summary.weekly_goal) * 1000) / 10;
+        const monthlyProgress = Math.round((summary.current_month_earned / summary.monthly_goal) * 1000) / 10;
+        
+        res.json({
+            success: true,
+            budget: {
+                weekly_goal: summary.weekly_goal / 100,
+                monthly_goal: summary.monthly_goal / 100,
+                current_week_earned: summary.current_week_earned / 100,
+                current_month_earned: summary.current_month_earned / 100,
+                weekly_remaining: (summary.weekly_goal - summary.current_week_earned) / 100,
+                monthly_remaining: (summary.monthly_goal - summary.current_month_earned) / 100,
+                weekly_progress: weeklyProgress,
+                monthly_progress: monthlyProgress
+            },
+            recent_transactions: transactions.map(t => ({
+                date: t.occurred_at,
+                amount: t.amount_cents / 100,
+                service: t.service_name,
+                client: t.client_name
+            }))
+        });
+    } catch (err) {
+        console.error('Budget error:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+router.post('/budget/transaction', async (req, res) => {
+    try {
+        const { amount, service, client } = req.body;
+        const amountCents = Math.round(parseFloat(amount) * 100) || 0;
+        
+        const transaction = await TransactionsRepo.create({
+            amount_cents: amountCents,
+            service_name: service || 'Service',
+            client_name: client || 'Client'
+        });
+        
+        res.json({
+            success: true,
+            transaction: {
+                date: transaction.occurred_at,
+                amount: transaction.amount_cents / 100,
+                service: transaction.service_name,
+                client: transaction.client_name
+            },
+            message: 'Earning added successfully'
+        });
+    } catch (err) {
+        console.error('Transaction error:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+router.post('/budget/goals', async (req, res) => {
+    try {
+        const { weekly_goal, monthly_goal } = req.body;
+        
+        if (weekly_goal !== undefined) {
+            await BudgetRepo.updateTarget('weekly', Math.round(parseFloat(weekly_goal) * 100));
         }
+        if (monthly_goal !== undefined) {
+            await BudgetRepo.updateTarget('monthly', Math.round(parseFloat(monthly_goal) * 100));
+        }
+        
+        res.json({
+            success: true,
+            message: 'Goals updated successfully'
+        });
     } catch (err) {
-        console.error('Error loading data:', err);
+        console.error('Goals error:', err);
+        res.status(500).json({ success: false, error: err.message });
     }
-    return getDefaultData();
-}
+});
 
-function saveData(data) {
+router.get('/appointments', async (req, res) => {
     try {
-        fs.writeFileSync(dataFile, JSON.stringify(data, null, 2));
+        const { date } = req.query;
+        let appointments;
+        
+        if (date) {
+            appointments = await AppointmentsRepo.getByDate(date);
+        } else {
+            appointments = await AppointmentsRepo.getAll();
+        }
+        
+        const SLOT_TO_TIME = {
+            'slot_0900': '9:00 AM', 'slot_1000': '10:00 AM', 'slot_1100': '11:00 AM',
+            'slot_1200': '12:00 PM', 'slot_1300': '1:00 PM', 'slot_1400': '2:00 PM',
+            'slot_1500': '3:00 PM', 'slot_1600': '4:00 PM', 'slot_1700': '5:00 PM'
+        };
+        
+        res.json({
+            success: true,
+            appointments: appointments.map(a => ({
+                id: a.id,
+                user: a.client_name,
+                client: a.client_name,
+                service: a.service_name || 'Service',
+                time: SLOT_TO_TIME[a.time_slot] || a.time_slot,
+                date: a.appointment_date,
+                barber: a.barber,
+                status: a.status
+            })),
+            count: appointments.length
+        });
     } catch (err) {
-        console.error('Error saving data:', err);
+        console.error('Appointments error:', err);
+        res.status(500).json({ success: false, error: err.message });
     }
-}
-
-function getDefaultData() {
-    return {
-        users: [],
-        appointments: [],
-        budget: {
-            weekly_goal: 2000,
-            monthly_goal: 8000,
-            current_week_earned: 0,
-            current_month_earned: 0,
-            transactions: []
-        },
-        telegram_messages: [],
-        recognition_log: []
-    };
-}
-
-router.get('/budget', (req, res) => {
-    const data = loadData();
-    const budget = data.budget || getDefaultData().budget;
-    
-    const weeklyProgress = Math.round((budget.current_week_earned / budget.weekly_goal) * 1000) / 10;
-    const monthlyProgress = Math.round((budget.current_month_earned / budget.monthly_goal) * 1000) / 10;
-    
-    res.json({
-        success: true,
-        budget: {
-            weekly_goal: budget.weekly_goal,
-            monthly_goal: budget.monthly_goal,
-            current_week_earned: budget.current_week_earned,
-            current_month_earned: budget.current_month_earned,
-            weekly_remaining: budget.weekly_goal - budget.current_week_earned,
-            monthly_remaining: budget.monthly_goal - budget.current_month_earned,
-            weekly_progress: weeklyProgress,
-            monthly_progress: monthlyProgress
-        },
-        recent_transactions: (budget.transactions || []).slice(-10).reverse()
-    });
 });
 
-router.post('/budget/transaction', (req, res) => {
-    const data = loadData();
-    const { amount, service, client } = req.body;
-    
-    const transaction = {
-        date: new Date().toISOString().split('T')[0],
-        amount: parseFloat(amount) || 0,
-        service: service || 'Service',
-        client: client || 'Client'
-    };
-    
-    data.budget = data.budget || getDefaultData().budget;
-    data.budget.transactions = data.budget.transactions || [];
-    data.budget.transactions.push(transaction);
-    data.budget.current_week_earned += transaction.amount;
-    data.budget.current_month_earned += transaction.amount;
-    
-    saveData(data);
-    
-    res.json({
-        success: true,
-        transaction: transaction,
-        message: 'Earning added successfully'
-    });
-});
-
-router.post('/budget/goals', (req, res) => {
-    const data = loadData();
-    const { weekly_goal, monthly_goal } = req.body;
-    
-    data.budget = data.budget || getDefaultData().budget;
-    
-    if (weekly_goal !== undefined) {
-        data.budget.weekly_goal = parseFloat(weekly_goal);
-    }
-    if (monthly_goal !== undefined) {
-        data.budget.monthly_goal = parseFloat(monthly_goal);
-    }
-    
-    saveData(data);
-    
-    res.json({
-        success: true,
-        message: 'Goals updated successfully'
-    });
-});
-
-router.get('/appointments', (req, res) => {
-    const data = loadData();
-    const appointments = data.appointments || [];
-    
-    res.json({
-        success: true,
-        appointments: appointments,
-        count: appointments.length
-    });
-});
-
-router.post('/appointments', (req, res) => {
-    const data = loadData();
-    const { user, service, time, date, barber } = req.body;
-    
-    const newAppointment = {
-        id: Math.max(...(data.appointments || []).map(a => a.id), 0) + 1,
-        user: user || 'Guest',
-        service: service || 'Haircut',
-        time: time || '12:00 PM',
-        date: date || 'today',
-        barber: barber || 'Available'
-    };
-    
-    data.appointments = data.appointments || [];
-    data.appointments.push(newAppointment);
-    saveData(data);
-    
-    res.json({
-        success: true,
-        appointment: newAppointment
-    });
-});
-
-router.get('/telegram/messages', (req, res) => {
-    const data = loadData();
-    const messages = data.telegram_messages || [];
-    
-    res.json({
-        success: true,
-        messages: messages.slice(0, 20)
-    });
-});
-
-router.post('/telegram/send', (req, res) => {
-    const data = loadData();
-    const { sender, text } = req.body;
-    
-    const message = {
-        id: Date.now(),
-        sender: sender || 'Unknown',
-        text: text || '',
-        timestamp: new Date().toISOString(),
-        isNew: true
-    };
-    
-    data.telegram_messages = data.telegram_messages || [];
-    data.telegram_messages.unshift(message);
-    
-    if (data.telegram_messages.length > 50) {
-        data.telegram_messages = data.telegram_messages.slice(0, 50);
-    }
-    
-    saveData(data);
-    
-    res.json({
-        success: true,
-        message: message
-    });
-});
-
-router.post('/mirror/command', (req, res) => {
-    const { command } = req.body;
-    
-    console.log('Mirror command received:', command);
-    
-    res.json({
-        success: true,
-        command: command,
-        message: 'Command sent to mirror'
-    });
-});
-
-router.get('/users', (req, res) => {
-    const data = loadData();
-    const users = data.users || [];
-    
-    res.json({
-        success: true,
-        users: users,
-        count: users.length
-    });
-});
-
-router.post('/users/register', (req, res) => {
-    const data = loadData();
-    const { name } = req.body;
-    
-    if (!name || !name.trim()) {
-        return res.json({
-            success: false,
-            message: 'Please provide a customer name'
+router.post('/appointments', async (req, res) => {
+    try {
+        const { user, service, time, date, barber } = req.body;
+        
+        const TIME_TO_SLOT = {
+            '9:00 AM': 'slot_0900', '10:00 AM': 'slot_1000', '11:00 AM': 'slot_1100',
+            '12:00 PM': 'slot_1200', '1:00 PM': 'slot_1300', '2:00 PM': 'slot_1400',
+            '3:00 PM': 'slot_1500', '4:00 PM': 'slot_1600', '5:00 PM': 'slot_1700'
+        };
+        
+        const serviceResult = await db.query('SELECT id FROM services WHERE LOWER(name) = LOWER($1)', [service]);
+        const serviceId = serviceResult.rows.length > 0 ? serviceResult.rows[0].id : null;
+        
+        const appointment = await AppointmentsRepo.create({
+            client_name: user,
+            service_id: serviceId,
+            appointment_date: date === 'today' ? new Date().toISOString().split('T')[0] : date,
+            time_slot: TIME_TO_SLOT[time] || time,
+            barber: barber || 'Any',
+            booked_via: 'admin',
+            booked_by: 'Admin'
         });
-    }
-    
-    const existingUser = (data.users || []).find(u => 
-        u.name.toLowerCase() === name.trim().toLowerCase()
-    );
-    
-    if (existingUser) {
-        return res.json({
-            success: false,
-            message: 'A customer with this name already exists'
+        
+        res.json({
+            success: true,
+            appointment: appointment,
+            message: 'Appointment booked successfully'
         });
+    } catch (err) {
+        console.error('Appointment create error:', err);
+        res.status(500).json({ success: false, error: err.message });
     }
-    
-    const pendingRegistration = {
-        name: name.trim(),
-        initiated_at: new Date().toISOString(),
-        status: 'pending'
-    };
-    
-    data.pending_registration = pendingRegistration;
-    saveData(data);
-    
-    console.log('Registration initiated for:', name);
-    
-    res.json({
-        success: true,
-        message: 'Registration initiated. Mirror will capture face.',
-        pending: pendingRegistration
-    });
 });
 
-router.get('/users/pending', (req, res) => {
-    const data = loadData();
-    
-    res.json({
-        success: true,
-        pending: data.pending_registration || null
-    });
+router.delete('/appointments/:id', async (req, res) => {
+    try {
+        await AppointmentsRepo.cancel(parseInt(req.params.id));
+        res.json({ success: true, message: 'Appointment cancelled' });
+    } catch (err) {
+        console.error('Appointment delete error:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
 });
 
-router.post('/users/complete', (req, res) => {
-    const data = loadData();
-    const { imageData, faceDescriptor, name: directName } = req.body;
-    
-    const pending = data.pending_registration;
-    const userName = pending ? pending.name : directName;
-    
-    if (!userName) {
-        return res.json({
-            success: false,
-            message: 'No pending registration and no name provided'
+router.get('/services', async (req, res) => {
+    try {
+        const activeOnly = req.query.all !== 'true';
+        const services = await ServicesRepo.getAll(activeOnly);
+        
+        res.json({
+            success: true,
+            services: services.map(s => ({
+                id: s.id,
+                name: s.name,
+                description: s.description,
+                duration: s.duration_minutes,
+                price: s.price_cents / 100,
+                is_active: s.is_active
+            }))
         });
+    } catch (err) {
+        console.error('Services error:', err);
+        res.status(500).json({ success: false, error: err.message });
     }
-    
-    const existingUser = (data.users || []).find(u => 
-        u.name.toLowerCase() === userName.toLowerCase()
-    );
-    if (existingUser) {
-        return res.json({
-            success: false,
-            message: 'A customer with this name already exists'
+});
+
+router.post('/services', async (req, res) => {
+    try {
+        const { name, description, duration, price } = req.body;
+        
+        const service = await ServicesRepo.create({
+            name: name,
+            description: description || '',
+            duration_minutes: parseInt(duration) || 30,
+            price_cents: Math.round(parseFloat(price) * 100) || 0,
+            is_active: true
         });
+        
+        res.json({
+            success: true,
+            service: {
+                id: service.id,
+                name: service.name,
+                description: service.description,
+                duration: service.duration_minutes,
+                price: service.price_cents / 100,
+                is_active: service.is_active
+            },
+            message: 'Service created successfully'
+        });
+    } catch (err) {
+        console.error('Service create error:', err);
+        res.status(500).json({ success: false, error: err.message });
     }
-    
-    data.users = data.users || [];
-    const userId = Math.max(...data.users.map(u => u.id), 0) + 1;
-    let faceImagePath = null;
-    
-    if (imageData && imageData.startsWith('data:image')) {
+});
+
+router.put('/services/:id', async (req, res) => {
+    try {
+        const { name, description, duration, price, is_active } = req.body;
+        
+        const service = await ServicesRepo.update(parseInt(req.params.id), {
+            name: name,
+            description: description || '',
+            duration_minutes: parseInt(duration) || 30,
+            price_cents: Math.round(parseFloat(price) * 100) || 0,
+            is_active: is_active !== false
+        });
+        
+        res.json({
+            success: true,
+            service: {
+                id: service.id,
+                name: service.name,
+                description: service.description,
+                duration: service.duration_minutes,
+                price: service.price_cents / 100,
+                is_active: service.is_active
+            },
+            message: 'Service updated successfully'
+        });
+    } catch (err) {
+        console.error('Service update error:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+router.delete('/services/:id', async (req, res) => {
+    try {
+        await ServicesRepo.delete(parseInt(req.params.id));
+        res.json({ success: true, message: 'Service deactivated' });
+    } catch (err) {
+        console.error('Service delete error:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+router.get('/users', async (req, res) => {
+    try {
+        const users = await UsersRepo.getAll();
+        
+        res.json({
+            success: true,
+            users: users.map(u => ({
+                id: u.id,
+                name: u.name,
+                recognition_count: u.recognition_count,
+                last_seen: u.last_seen,
+                has_face: !!u.face_descriptor,
+                azure_person_id: u.azure_person_id,
+                face_descriptor: u.face_descriptor
+            }))
+        });
+    } catch (err) {
+        console.error('Users error:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+router.post('/users', async (req, res) => {
+    try {
+        const { name, azure_person_id, face_descriptor } = req.body;
+        
+        if (!name) {
+            return res.status(400).json({ success: false, error: 'Name is required' });
+        }
+        
+        const user = await UsersRepo.create({
+            name: name,
+            azure_person_id: azure_person_id || null,
+            face_descriptor: face_descriptor || null
+        });
+        
+        res.json({
+            success: true,
+            user: {
+                id: user.id,
+                name: user.name,
+                recognition_count: user.recognition_count || 0,
+                azure_person_id: user.azure_person_id,
+                face_descriptor: user.face_descriptor
+            },
+            message: 'User registered successfully'
+        });
+    } catch (err) {
+        console.error('User create error:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+router.post('/users/:id/recognition', async (req, res) => {
+    try {
+        const userId = parseInt(req.params.id);
+        
+        await UsersRepo.incrementRecognition(userId);
+        
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Recognition log error:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+router.get('/users/pending', async (req, res) => {
+    try {
+        const pending = await UsersRepo.getPending();
+        res.json({ success: true, pending: pending });
+    } catch (err) {
+        console.error('Pending user error:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+router.post('/users/:id/face', async (req, res) => {
+    try {
+        const userId = parseInt(req.params.id);
+        const { face_descriptor } = req.body;
+        
+        if (!face_descriptor) {
+            return res.status(400).json({ success: false, error: 'Face descriptor required' });
+        }
+        
+        const user = await UsersRepo.completePending(userId, face_descriptor);
+        
+        res.json({
+            success: true,
+            user: {
+                id: user.id,
+                name: user.name,
+                has_face: !!user.face_descriptor
+            },
+            message: 'Face registered successfully'
+        });
+    } catch (err) {
+        console.error('Face registration error:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+router.get('/telegram/messages', async (req, res) => {
+    try {
+        const messages = await MessagesRepo.getRecent(20);
+        
+        res.json({
+            success: true,
+            messages: messages.map(m => ({
+                id: m.id,
+                timestamp: m.sent_at,
+                created_at: m.sent_at,
+                sender: m.sender,
+                text: m.text,
+                content: m.text,
+                isNew: m.is_new
+            }))
+        });
+    } catch (err) {
+        console.error('Messages error:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+router.post('/telegram/send', async (req, res) => {
+    try {
+        const { message } = req.body;
+        
+        await MessagesRepo.create({
+            sender: 'Admin',
+            text: message,
+            chat_id: 0
+        });
+        
+        const fs = require('fs');
+        const logFile = path.join(__dirname, '../backend/telegram_log.json');
+        let logs = [];
         try {
-            const facesDir = path.join(__dirname, '../backend/faces');
-            if (!fs.existsSync(facesDir)) {
-                fs.mkdirSync(facesDir, { recursive: true });
+            if (fs.existsSync(logFile)) {
+                logs = JSON.parse(fs.readFileSync(logFile, 'utf8'));
             }
-            
-            const base64Data = imageData.replace(/^data:image\/\w+;base64,/, '');
-            const imageBuffer = Buffer.from(base64Data, 'base64');
-            const filename = `user_${userId}_${Date.now()}.jpg`;
-            const filepath = path.join(facesDir, filename);
-            
-            fs.writeFileSync(filepath, imageBuffer);
-            faceImagePath = `faces/${filename}`;
-            console.log('Face image saved:', faceImagePath);
-        } catch (err) {
-            console.error('Error saving face image:', err);
-        }
-    }
-    
-    const newUser = {
-        id: userId,
-        name: userName,
-        trained_at: new Date().toISOString().split('T')[0],
-        recognition_count: 0,
-        face_image: faceImagePath,
-        face_descriptor: faceDescriptor || null,
-        services: []
-    };
-    
-    data.users.push(newUser);
-    delete data.pending_registration;
-    saveData(data);
-    
-    console.log('User registered with face descriptor:', !!faceDescriptor);
-    
-    res.json({
-        success: true,
-        user: newUser,
-        message: 'Customer registered successfully'
-    });
-});
-
-router.get('/users/:id/history', (req, res) => {
-    const data = loadData();
-    const userId = parseInt(req.params.id);
-    
-    const user = (data.users || []).find(u => u.id === userId);
-    if (!user) {
-        return res.json({
-            success: false,
-            message: 'User not found'
-        });
-    }
-    
-    const services = user.services || [];
-    const lastService = services.length > 0 ? services[services.length - 1] : null;
-    
-    let recommendation = null;
-    if (lastService) {
-        recommendation = "Same as last time? " + lastService.service;
-    } else {
-        recommendation = "First visit! Ask about our popular services.";
-    }
-    
-    res.json({
-        success: true,
-        visitCount: (user.recognition_count || 0) + 1,
-        lastService: lastService,
-        services: services,
-        recommendation: recommendation
-    });
-});
-
-router.post('/users/:id/recognized', (req, res) => {
-    const data = loadData();
-    const userId = parseInt(req.params.id);
-    
-    const user = (data.users || []).find(u => u.id === userId);
-    if (!user) {
-        return res.json({ success: false, message: 'User not found' });
-    }
-    
-    user.recognition_count = (user.recognition_count || 0) + 1;
-    user.last_seen = new Date().toISOString();
-    
-    data.recognition_log = data.recognition_log || [];
-    data.recognition_log.push({
-        user_id: userId,
-        user_name: user.name,
-        timestamp: new Date().toISOString()
-    });
-    
-    if (data.recognition_log.length > 100) {
-        data.recognition_log = data.recognition_log.slice(-100);
-    }
-    
-    saveData(data);
-    
-    res.json({
-        success: true,
-        recognition_count: user.recognition_count
-    });
-});
-
-router.post('/users/:id/service', (req, res) => {
-    const data = loadData();
-    const userId = parseInt(req.params.id);
-    const { service, notes, amount } = req.body;
-    
-    const user = (data.users || []).find(u => u.id === userId);
-    if (!user) {
-        return res.json({ success: false, message: 'User not found' });
-    }
-    
-    user.services = user.services || [];
-    const serviceRecord = {
-        id: Date.now(),
-        service: service || 'Haircut',
-        notes: notes || '',
-        amount: parseFloat(amount) || 0,
-        date: new Date().toISOString()
-    };
-    
-    user.services.push(serviceRecord);
-    saveData(data);
-    
-    res.json({
-        success: true,
-        service: serviceRecord,
-        message: 'Service logged successfully'
-    });
-});
-
-router.delete('/users/:id', (req, res) => {
-    const data = loadData();
-    const userId = parseInt(req.params.id);
-    
-    data.users = data.users || [];
-    const userIndex = data.users.findIndex(u => u.id === userId);
-    
-    if (userIndex === -1) {
-        return res.json({
-            success: false,
-            message: 'User not found'
-        });
-    }
-    
-    data.users.splice(userIndex, 1);
-    saveData(data);
-    
-    res.json({
-        success: true,
-        message: 'User deleted successfully'
-    });
-});
-
-const configFile = path.join(__dirname, '../config/config.js');
-
-function getDefaultModuleConfig() {
-    return {
-        clock: {
-            enabled: true,
-            position: 'top_left',
-            showDate: true,
-            dateFormat: 'dddd, MMMM D, YYYY'
-        },
-        calendar: {
-            enabled: true,
-            position: 'top_left',
-            calendarUrl: 'https://www.calendarlabs.com/ical-calendar/ics/76/US_Holidays.ics',
-            calendarName: 'US Holidays',
-            maxEntries: 5
-        },
-        weather: {
-            enabled: true,
-            position: 'top_right',
-            showForecast: true,
-            location: 'Chicago',
-            lat: 41.8781,
-            lon: -87.6298
-        },
-        faceRecognition: {
-            enabled: true,
-            position: 'middle_center',
-            showVoiceInput: true,
-            autoScan: false
-        },
-        telegram: {
-            enabled: true,
-            position: 'bottom_left',
-            maxMessages: 4
-        },
-        appointments: {
-            enabled: true,
-            position: 'bottom_right',
-            maxAppointments: 5,
-            showAddButton: true
-        },
-        newsfeed: {
-            enabled: true,
-            position: 'bottom_bar',
-            feedUrl: 'https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml',
-            feedTitle: 'New York Times'
-        }
-    };
-}
-
-router.get('/modules', (req, res) => {
-    const data = loadData();
-    const defaults = getDefaultModuleConfig();
-    const saved = data.moduleConfig || {};
-    
-    const moduleConfig = {};
-    for (const key in defaults) {
-        moduleConfig[key] = { ...defaults[key], ...saved[key] };
-    }
-    
-    res.json({
-        success: true,
-        modules: moduleConfig,
-        positions: [
-            'top_bar', 'top_left', 'top_center', 'top_right',
-            'upper_third', 'middle_center', 'lower_third',
-            'bottom_left', 'bottom_center', 'bottom_right', 'bottom_bar'
-        ]
-    });
-});
-
-router.post('/modules', (req, res) => {
-    const data = loadData();
-    const { modules } = req.body;
-    
-    if (!modules) {
-        return res.json({ success: false, message: 'No module configuration provided' });
-    }
-    
-    data.moduleConfig = modules;
-    saveData(data);
-    
-    generateConfigFile(modules);
-    
-    res.json({
-        success: true,
-        message: 'Module configuration saved. Refresh the mirror to apply changes.'
-    });
-});
-
-function generateConfigFile(moduleConfig) {
-    const modules = [];
-    
-    modules.push(`{
-                        module: "alert",
-                }`);
-    
-    if (moduleConfig.clock?.enabled) {
-        modules.push(`{
-                        module: "clock",
-                        position: "${moduleConfig.clock.position || 'top_left'}",
-                        config: {
-                                showDate: ${moduleConfig.clock.showDate !== false},
-                                showWeek: false,
-                                dateFormat: "${moduleConfig.clock.dateFormat || 'dddd, MMMM D, YYYY'}"
-                        }
-                }`);
-    }
-    
-    if (moduleConfig.calendar?.enabled) {
-        modules.push(`{
-                        module: "calendar",
-                        header: "Upcoming Events",
-                        position: "${moduleConfig.calendar.position || 'top_left'}",
-                        config: {
-                                calendars: [
-                                        {
-                                                symbol: "flag-usa",
-                                                url: "${moduleConfig.calendar.calendarUrl || 'https://www.calendarlabs.com/ical-calendar/ics/76/US_Holidays.ics'}",
-                                                name: "${moduleConfig.calendar.calendarName || 'US Holidays'}"
-                                        }
-                                ],
-                                maximumEntries: ${moduleConfig.calendar.maxEntries || 5},
-                                showLocation: false,
-                                wrapEvents: true,
-                                fetchInterval: 300000
-                        }
-                }`);
-    }
-    
-    if (moduleConfig.faceRecognition?.enabled) {
-        modules.push(`{
-                        module: "MMM-Face-Recognition-SMAI",
-                        position: "${moduleConfig.faceRecognition.position || 'middle_center'}",
-                        config: {
-                                showVoiceInput: ${moduleConfig.faceRecognition.showVoiceInput !== false},
-                                autoScan: ${moduleConfig.faceRecognition.autoScan === true},
-                                welcomeDuration: 6000,
-                                animationSpeed: 500
-                        }
-                }`);
-    }
-    
-    if (moduleConfig.weather?.enabled) {
-        const lat = moduleConfig.weather.lat || 41.8781;
-        const lon = moduleConfig.weather.lon || -87.6298;
+        } catch (e) {}
         
-        modules.push(`{
-                        module: "weather",
-                        position: "${moduleConfig.weather.position || 'top_right'}",
-                        config: {
-                                weatherProvider: "openmeteo",
-                                type: "current",
-                                lat: ${lat},
-                                lon: ${lon}
-                        }
-                }`);
+        logs.unshift({
+            id: Date.now(),
+            timestamp: new Date().toISOString(),
+            sender: 'Admin',
+            text: message,
+            isNew: true
+        });
+        logs = logs.slice(0, 100);
+        fs.writeFileSync(logFile, JSON.stringify(logs, null, 2));
         
-        if (moduleConfig.weather.showForecast !== false) {
-            modules.push(`{
-                        module: "weather",
-                        position: "${moduleConfig.weather.position || 'top_right'}",
-                        header: "Weather Forecast",
-                        config: {
-                                weatherProvider: "openmeteo",
-                                type: "forecast",
-                                maxNumberOfDays: 5,
-                                lat: ${lat},
-                                lon: ${lon}
-                        }
-                }`);
-        }
+        res.json({ success: true, message: 'Message sent to mirror' });
+    } catch (err) {
+        console.error('Send message error:', err);
+        res.status(500).json({ success: false, error: err.message });
     }
-    
-    if (moduleConfig.telegram?.enabled) {
-        modules.push(`{
-                        module: "MMM-TelegramRelayDisplay",
-                        position: "${moduleConfig.telegram.position || 'bottom_left'}",
-                        header: "",
-                        config: {
-                                maxMessages: ${moduleConfig.telegram.maxMessages || 4},
-                                displayDuration: 10000,
-                                updateInterval: 5000,
-                                showTimestamp: true,
-                                showSender: true
-                        }
-                }`);
+});
+
+router.post('/mirror/command', async (req, res) => {
+    try {
+        const { command } = req.body;
+        
+        await MessagesRepo.create({
+            sender: 'Admin',
+            text: `[COMMAND] ${command}`,
+            chat_id: 0
+        });
+        
+        const fs = require('fs');
+        const logFile = path.join(__dirname, '../backend/telegram_log.json');
+        let logs = [];
+        try {
+            if (fs.existsSync(logFile)) {
+                logs = JSON.parse(fs.readFileSync(logFile, 'utf8'));
+            }
+        } catch (e) {}
+        
+        logs.unshift({
+            id: Date.now(),
+            timestamp: new Date().toISOString(),
+            sender: 'Admin',
+            text: `[COMMAND] ${command}`,
+            isNew: true
+        });
+        logs = logs.slice(0, 100);
+        fs.writeFileSync(logFile, JSON.stringify(logs, null, 2));
+        
+        res.json({ success: true, message: `Command ${command} sent` });
+    } catch (err) {
+        console.error('Command error:', err);
+        res.status(500).json({ success: false, error: err.message });
     }
-    
-    if (moduleConfig.appointments?.enabled) {
-        modules.push(`{
-                        module: "MMM-Appointments",
-                        position: "${moduleConfig.appointments.position || 'bottom_right'}",
-                        header: "",
-                        config: {
-                                updateInterval: 60000,
-                                maxAppointments: ${moduleConfig.appointments.maxAppointments || 5},
-                                showAddButton: ${moduleConfig.appointments.showAddButton !== false}
-                        }
-                }`);
+});
+
+router.get('/config', (req, res) => {
+    try {
+        const configPath = path.join(__dirname, '../config/config.js');
+        delete require.cache[require.resolve(configPath)];
+        const config = require(configPath);
+        res.json({ success: true, config });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
     }
-    
-    if (moduleConfig.newsfeed?.enabled) {
-        modules.push(`{
-                        module: "newsfeed",
-                        position: "${moduleConfig.newsfeed.position || 'bottom_bar'}",
-                        config: {
-                                feeds: [
-                                        {
-                                                title: "${moduleConfig.newsfeed.feedTitle || 'New York Times'}",
-                                                url: "${moduleConfig.newsfeed.feedUrl || 'https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml'}"
-                                        }
-                                ],
-                                showSourceTitle: true,
-                                showPublishDate: true,
-                                broadcastNewsFeeds: true,
-                                broadcastNewsUpdates: true,
-                                showDescription: false
-                        }
-                }`);
-    }
-    
-    const configContent = `/* SmartMirror Configuration
- *
- * Full-featured SmartMirror with face recognition, voice commands,
- * calendar integration, Telegram messaging, and appointments.
- * Budget Tracker is available on the separate admin page at /admin
- *
- * This file is auto-generated by the admin panel.
- * Last updated: ${new Date().toISOString()}
- */
+});
+
+router.post('/config', (req, res) => {
+    try {
+        const { modules } = req.body;
+        const configPath = path.join(__dirname, '../config/config.js');
+        
+        let configContent = `/* SmartMirror Configuration - Auto-generated */
 let config = {
-        address: "0.0.0.0",
-        port: 8080,
-        basePath: "/",
-        ipWhitelist: [],
-
-        useHttps: false,
-        httpsPrivateKey: "",
-        httpsCertificate: "",
-
-        language: "en",
-        locale: "en-US",
-
-        logLevel: ["INFO", "LOG", "WARN", "ERROR"],
-        timeFormat: 12,
-        units: "imperial",
-
-        modules: [
-                ${modules.join(',\n\t\t')}
-        ]
+    address: "0.0.0.0",
+    port: 8080,
+    basePath: "/",
+    ipWhitelist: [],
+    useHttps: false,
+    httpsPrivateKey: "",
+    httpsCertificate: "",
+    language: "en",
+    locale: "en-US",
+    logLevel: ["INFO", "LOG", "WARN", "ERROR"],
+    timeFormat: 12,
+    units: "imperial",
+    modules: [
+`;
+        
+        for (const mod of modules) {
+            configContent += `        {\n`;
+            configContent += `            module: "${mod.module}",\n`;
+            if (mod.position) configContent += `            position: "${mod.position}",\n`;
+            if (mod.header !== undefined) configContent += `            header: "${mod.header}",\n`;
+            if (mod.config) {
+                configContent += `            config: ${JSON.stringify(mod.config, null, 16).replace(/\n/g, '\n            ')}\n`;
+            }
+            configContent += `        },\n`;
+        }
+        
+        configContent += `    ]
 };
 
 /*************** DO NOT EDIT THE LINE BELOW ***************/
 if (typeof module !== "undefined") { module.exports = config; }
 `;
-    
-    try {
-        fs.writeFileSync(configFile, configContent);
-        console.log('Config file regenerated successfully');
+        
+        fs.writeFileSync(configPath, configContent);
+        res.json({ success: true, message: 'Configuration saved' });
     } catch (err) {
-        console.error('Error writing config file:', err);
+        res.status(500).json({ success: false, error: err.message });
     }
-}
+});
 
 module.exports = router;

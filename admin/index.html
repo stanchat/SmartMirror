@@ -943,6 +943,75 @@
                 opacity: 0.8;
             }
         }
+        
+        /* Services Grid */
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 16px;
+        }
+        
+        .service-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .service-card h3 {
+            font-size: 18px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .service-card .price {
+            color: #10b981;
+            font-size: 24px;
+            font-weight: 600;
+        }
+        
+        .service-card .duration {
+            color: #666;
+            font-size: 14px;
+            margin-top: 4px;
+        }
+        
+        .service-card .description {
+            color: #888;
+            font-size: 13px;
+            margin-top: 8px;
+        }
+        
+        .service-card .actions {
+            margin-top: 16px;
+            display: flex;
+            gap: 8px;
+        }
+        
+        .service-card .btn-sm {
+            padding: 8px 16px;
+            font-size: 12px;
+        }
+        
+        .service-inactive {
+            opacity: 0.5;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+        }
+        
+        .badge.active {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+        }
     </style>
 </head>
 <body>
@@ -952,6 +1021,7 @@
 
     <div class="tabs">
         <button class="tab active" onclick="switchTab('budget')">💰 Budget</button>
+        <button class="tab" onclick="switchTab('services')">✂️ Services</button>
         <button class="tab" onclick="switchTab('telegram')">💬 Telegram Bot</button>
         <button class="tab" onclick="switchTab('controls')">🎛️ Mirror Controls</button>
         <button class="tab" onclick="switchTab('modules')">🧩 Modules</button>
@@ -1025,6 +1095,22 @@
                 <ul class="transaction-list" id="transactionList">
                     <li class="loading">Loading transactions...</li>
                 </ul>
+            </div>
+        </div>
+
+        <!-- Services Tab -->
+        <div id="services-tab" class="tab-content">
+            <div class="section">
+                <div class="section-header">
+                    <h2>Manage Services</h2>
+                    <button class="btn" onclick="openAddServiceModal()">+ Add Service</button>
+                </div>
+                <p class="section-description">
+                    These services appear in the Telegram booking flow. Customers can book these when using @BarberMirrorBot.
+                </p>
+                <div id="servicesList" class="services-grid">
+                    <div class="loading">Loading services...</div>
+                </div>
             </div>
         </div>
 
@@ -1286,6 +1372,36 @@
         </div>
     </div>
 
+    <!-- Add/Edit Service Modal -->
+    <div class="modal" id="serviceModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="serviceModalTitle">Add Service</h3>
+                <button class="close-btn" onclick="closeServiceModal()">&times;</button>
+            </div>
+            <form id="serviceForm">
+                <input type="hidden" id="serviceId">
+                <div class="form-group">
+                    <label for="serviceName">Service Name</label>
+                    <input type="text" id="serviceName" placeholder="Haircut" required>
+                </div>
+                <div class="form-group">
+                    <label for="servicePrice">Price ($)</label>
+                    <input type="number" id="servicePrice" placeholder="35" required min="1" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label for="serviceDuration">Duration (minutes)</label>
+                    <input type="number" id="serviceDuration" placeholder="30" required min="5" value="30">
+                </div>
+                <div class="form-group">
+                    <label for="serviceDescription">Description (optional)</label>
+                    <input type="text" id="serviceDescription" placeholder="Standard haircut service">
+                </div>
+                <button type="submit" class="btn" style="width: 100%; margin-top: 16px;">Save Service</button>
+            </form>
+        </div>
+    </div>
+
     <script>
         let budgetData = null;
 
@@ -1296,7 +1412,9 @@
             event.target.classList.add('active');
             document.getElementById(tabName + '-tab').classList.add('active');
 
-            if (tabName === 'telegram') {
+            if (tabName === 'services') {
+                loadServices();
+            } else if (tabName === 'telegram') {
                 loadMessages();
             } else if (tabName === 'controls') {
                 loadRegisteredUsers();
@@ -1350,6 +1468,122 @@
                 `).join('');
             }
         }
+
+        // Services Management
+        async function loadServices() {
+            try {
+                const response = await fetch('/api/services?all=true');
+                const data = await response.json();
+                
+                if (data.success) {
+                    renderServices(data.services);
+                }
+            } catch (error) {
+                console.error('Error loading services:', error);
+                document.getElementById('servicesList').innerHTML = '<div class="error">Failed to load services</div>';
+            }
+        }
+
+        function renderServices(services) {
+            const container = document.getElementById('servicesList');
+            
+            if (!services || services.length === 0) {
+                container.innerHTML = '<div class="empty">No services found. Add your first service!</div>';
+                return;
+            }
+            
+            container.innerHTML = services.map(service => `
+                <div class="service-card ${service.is_active ? '' : 'service-inactive'}">
+                    <h3>
+                        ${service.name}
+                        <span class="badge ${service.is_active ? 'active' : ''}">${service.is_active ? 'Active' : 'Inactive'}</span>
+                    </h3>
+                    <div class="price">$${service.price.toFixed(2)}</div>
+                    <div class="duration">${service.duration} minutes</div>
+                    ${service.description ? `<div class="description">${service.description}</div>` : ''}
+                    <div class="actions">
+                        <button class="btn btn-sm btn-secondary" onclick="editService(${service.id}, '${service.name}', ${service.price}, ${service.duration}, '${service.description || ''}')">Edit</button>
+                        <button class="btn btn-sm ${service.is_active ? 'btn-danger' : ''}" onclick="toggleService(${service.id}, ${!service.is_active})">${service.is_active ? 'Deactivate' : 'Activate'}</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function openAddServiceModal() {
+            document.getElementById('serviceModalTitle').textContent = 'Add Service';
+            document.getElementById('serviceId').value = '';
+            document.getElementById('serviceName').value = '';
+            document.getElementById('servicePrice').value = '';
+            document.getElementById('serviceDuration').value = '30';
+            document.getElementById('serviceDescription').value = '';
+            document.getElementById('serviceModal').classList.add('active');
+        }
+
+        function editService(id, name, price, duration, description) {
+            document.getElementById('serviceModalTitle').textContent = 'Edit Service';
+            document.getElementById('serviceId').value = id;
+            document.getElementById('serviceName').value = name;
+            document.getElementById('servicePrice').value = price;
+            document.getElementById('serviceDuration').value = duration;
+            document.getElementById('serviceDescription').value = description;
+            document.getElementById('serviceModal').classList.add('active');
+        }
+
+        function closeServiceModal() {
+            document.getElementById('serviceModal').classList.remove('active');
+        }
+
+        async function toggleService(id, activate) {
+            try {
+                const response = await fetch(`/api/services/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ is_active: activate })
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    loadServices();
+                }
+            } catch (error) {
+                console.error('Error toggling service:', error);
+            }
+        }
+
+        document.getElementById('serviceForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const id = document.getElementById('serviceId').value;
+            const serviceData = {
+                name: document.getElementById('serviceName').value,
+                price: parseFloat(document.getElementById('servicePrice').value),
+                duration: parseInt(document.getElementById('serviceDuration').value),
+                description: document.getElementById('serviceDescription').value
+            };
+            
+            try {
+                const url = id ? `/api/services/${id}` : '/api/services';
+                const method = id ? 'PUT' : 'POST';
+                
+                const response = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(serviceData)
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    closeServiceModal();
+                    loadServices();
+                } else {
+                    alert('Error saving service: ' + (data.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error saving service:', error);
+                alert('Error saving service');
+            }
+        });
 
         async function loadMessages() {
             try {

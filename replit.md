@@ -4,8 +4,9 @@
 This is a **production-ready SmartMirror** application running on Replit - a web-based smart mirror system built on MagicMirror² with **real face recognition** (Azure Face API) and **real voice commands** (Web Speech API). It provides personalized greetings, voice-activated control, appointment scheduling, Telegram messaging relay, calendar integration, and budget tracking for barbers.
 
 **Version:** 2.30.0 (MagicMirror² base)  
-**Language:** Node.js (v20.19.3)  
-**Last Updated:** November 30, 2025
+**Language:** Node.js (v20.19.3) + Python 3.11 (Telegram bot)  
+**Database:** PostgreSQL (Neon-backed Replit DB)
+**Last Updated:** December 1, 2025
 
 ## Production Features
 
@@ -40,10 +41,12 @@ Customer-facing smart mirror display with:
 - News feed (NY Times)
 
 ### Admin Panel (`/admin`)
-Barber-only management page with three tabs:
+Barber-only management page with five tabs:
 1. **Budget Tab:** Weekly/monthly goal tracking, add earnings, transaction history
-2. **Telegram Bot Tab:** Send messages to mirror, quick bot commands, message history
-3. **Mirror Controls Tab:** Remote control for face detection, greetings, show messages
+2. **Services Tab:** Manage services/products with prices and durations
+3. **Telegram Bot Tab:** Send messages to mirror, quick bot commands, message history
+4. **Mirror Controls Tab:** Remote control for face detection, greetings, show messages
+5. **Modules Tab:** Configure MagicMirror module positions and settings
 
 ## Voice Commands
 
@@ -84,8 +87,8 @@ The SmartMirror includes a fully integrated Telegram bot that acts as a mobile-f
 
 ### Message Flow
 1. User sends message to @BarberMirrorBot
-2. Python bot logs message to `backend/telegram_log.json`
-3. MagicMirror module watches log file (every 2 seconds)
+2. Python bot logs message to PostgreSQL database
+3. MagicMirror module polls API every 2 seconds
 4. New messages displayed on mirror with TTS announcement
 5. Commands (prefixed with `[COMMAND]`) trigger mirror actions
 
@@ -105,15 +108,20 @@ The SmartMirror includes a fully integrated Telegram bot that acts as a mobile-f
 ├── config/
 │   └── config.js          - Main MagicMirror configuration
 ├── admin/
-│   ├── index.html         - Admin panel frontend (3 tabs)
-│   └── api.js             - Admin API routes
+│   ├── index.html         - Admin panel frontend (5 tabs)
+│   └── api.js             - Admin API routes (PostgreSQL)
 ├── modules/
 │   ├── default/           - Built-in MagicMirror modules
 │   ├── MMM-Face-Recognition-SMAI/  - Face recognition with Azure + voice
 │   ├── MMM-TelegramRelayDisplay/   - Telegram message display
 │   └── MMM-Appointments/  - Appointment scheduler module
 ├── backend/
-│   └── data.json          - Persistent storage for all data
+│   ├── db/                - Database layer
+│   │   ├── index.js       - Database connection pool
+│   │   ├── repositories.js - Data access layer (CRUD)
+│   │   └── migrations/    - SQL migration scripts
+│   ├── telegram_bot.py    - Telegram bot (asyncpg)
+│   └── db_client.py       - Python database client
 ├── server.js              - Main server (proxy + admin API)
 ├── js/                    - Core MagicMirror files
 ├── css/                   - Stylesheets
@@ -144,17 +152,23 @@ The SmartMirror includes a fully integrated Telegram bot that acts as a mobile-f
 | `/api/budget/goals` | POST | Update weekly/monthly goals |
 | `/api/appointments` | GET | Get appointments list |
 | `/api/appointments` | POST | Add new appointment |
+| `/api/services` | GET | Get all services |
+| `/api/services` | POST | Create a new service |
+| `/api/services/:id` | PUT | Update a service |
+| `/api/users` | GET | Get all registered users |
+| `/api/users` | POST | Register a new user |
 | `/api/telegram/messages` | GET | Get message history |
 | `/api/telegram/send` | POST | Send message to mirror |
 | `/api/mirror/command` | POST | Send command to mirror |
 
 ### Data Storage
-All data is persisted in `backend/data.json`:
-- **users:** Registered faces with recognition count
-- **appointments:** Scheduled appointments
-- **budget:** Weekly/monthly goals and transactions
-- **telegram_messages:** Message history
-- **recognition_log:** History of face recognitions
+All data is persisted in PostgreSQL with the following tables:
+- **users:** Registered customers with face descriptors
+- **services:** Available services with prices/durations
+- **appointments:** Scheduled appointments with service references
+- **transactions:** Earnings and budget tracking
+- **messages:** Telegram message history
+- **budget_targets:** Weekly/monthly goal amounts
 
 ## Browser Requirements
 
@@ -217,10 +231,21 @@ The project is configured for Replit deployment with:
 - **Run Command:** `node server.js`
 
 ## Recent Changes
-- **2025-11-30:** Telegram Bot Stability Fix
-  - Fixed bot conflict error when multiple instances tried to poll simultaneously
-  - Added `drop_pending_updates=True` to clear stale sessions on startup
-  - Updated start.sh to kill orphaned bot processes before restarting
+- **2025-12-01:** PostgreSQL Database Migration
+  - Migrated all data storage from JSON files to PostgreSQL (Replit Neon-backed DB)
+  - Created database layer: backend/db/index.js (connection pool), repositories.js (CRUD operations)
+  - Added SQL migration script: backend/db/migrations/001_initial_schema.sql
+  - Python Telegram bot now uses asyncpg for database operations
+  - Added Services management tab to admin panel (CRUD operations for services)
+  - MMM-TelegramRelayDisplay and MMM-Face-Recognition-SMAI now use database APIs
+  - Added user management endpoints (POST /api/users, POST /api/users/:id/recognition)
+  - Face recognition module includes retry logic for server startup timing
+
+- **2025-12-01:** Telegram Bot Stability Improvements
+  - Added explicit webhook clearing before polling starts
+  - Flushed update queue to clear stale messages
+  - Added 5-second delay for Telegram to release old connections
+  - Eliminates conflict errors when workflow restarts
 
 - **2025-11-30:** Weather & Appointment System Fixes
   - Removed confusing sunset time display from weather module (showSun: false)
@@ -294,9 +319,11 @@ The project is configured for Replit deployment with:
 - Real face and voice recognition for production use
 
 ## Technical Notes
-- Face recognition uses Azure Face API (cloud-based)
+- Face recognition uses Azure Face API (cloud-based) + local face-api.js for matching
 - Voice commands use browser's Web Speech API
 - TTS uses browser's Web Speech API
-- All data persists in JSON file between sessions
+- All data persists in PostgreSQL database (Replit Neon-backed)
 - Server proxies MagicMirror from internal port 8080 to public port 5000
 - Falls back to simulation mode if camera/microphone unavailable
+- Telegram bot uses asyncpg for async database operations
+- Node.js uses pg (node-postgres) with connection pooling
