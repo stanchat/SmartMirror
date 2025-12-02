@@ -112,6 +112,11 @@ router.get('/me', authMiddleware, async (req, res) => {
                 color: barber.color,
                 shop_id: shop.id,
                 shop_name: shop.name
+            },
+            shop: {
+                id: shop.id,
+                name: shop.name,
+                slug: shop.slug
             }
         });
     } catch (err) {

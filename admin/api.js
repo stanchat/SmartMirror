@@ -35,6 +35,108 @@ router.get('/health', async (req, res) => {
     res.json(health);
 });
 
+router.get('/public/shop/:slug', async (req, res) => {
+    try {
+        const shop = await ShopsRepo.getBySlug(req.params.slug);
+        if (!shop) {
+            return res.status(404).json({ success: false, error: 'Shop not found' });
+        }
+        res.json({
+            success: true,
+            shop: {
+                id: shop.id,
+                name: shop.name,
+                slug: shop.slug,
+                address: shop.address
+            }
+        });
+    } catch (err) {
+        console.error('Shop lookup error:', err);
+        res.status(500).json({ success: false, error: 'Failed to load shop' });
+    }
+});
+
+const selfRegRateLimiter = new Map();
+
+router.post('/public/register/:slug', async (req, res) => {
+    try {
+        const clientIP = req.ip || req.connection.remoteAddress;
+        const now = Date.now();
+        const windowMs = 60000;
+        const maxRequests = 5;
+        
+        const clientData = selfRegRateLimiter.get(clientIP) || { count: 0, resetTime: now + windowMs };
+        if (now > clientData.resetTime) {
+            clientData.count = 0;
+            clientData.resetTime = now + windowMs;
+        }
+        clientData.count++;
+        selfRegRateLimiter.set(clientIP, clientData);
+        
+        if (clientData.count > maxRequests) {
+            return res.status(429).json({ success: false, error: 'Too many registration attempts. Please wait a minute.' });
+        }
+        
+        const { name, phone, face_descriptor, photo } = req.body;
+        
+        if (!name || !face_descriptor) {
+            return res.status(400).json({ success: false, error: 'Name and face data are required' });
+        }
+        
+        if (!Array.isArray(face_descriptor) || face_descriptor.length !== 128) {
+            return res.status(400).json({ success: false, error: 'Invalid face data format' });
+        }
+        
+        const validDescriptor = face_descriptor.every(val => typeof val === 'number' && !isNaN(val));
+        if (!validDescriptor) {
+            return res.status(400).json({ success: false, error: 'Invalid face data values' });
+        }
+        
+        const shop = await ShopsRepo.getBySlug(req.params.slug);
+        if (!shop) {
+            return res.status(404).json({ success: false, error: 'Shop not found' });
+        }
+        
+        const trimmedName = name.trim();
+        const existingUser = await UsersRepo.getByName(trimmedName, shop.id);
+        
+        if (existingUser) {
+            if (existingUser.face_descriptor) {
+                return res.status(409).json({ 
+                    success: false, 
+                    error: 'A customer with this name is already registered. Please use a different name or ask staff for help.' 
+                });
+            }
+            await UsersRepo.update(existingUser.id, { 
+                face_descriptor: face_descriptor,
+                phone: phone || existingUser.phone
+            });
+            return res.json({
+                success: true,
+                user: { id: existingUser.id, name: existingUser.name },
+                message: 'Registration successful'
+            });
+        }
+        
+        const user = await UsersRepo.create({
+            shop_id: shop.id,
+            name: trimmedName,
+            phone: phone || null,
+            face_descriptor: face_descriptor,
+            registered_via: 'self_registration'
+        });
+        
+        res.json({
+            success: true,
+            user: { id: user.id, name: user.name },
+            message: 'Registration successful'
+        });
+    } catch (err) {
+        console.error('Self-registration error:', err);
+        res.status(500).json({ success: false, error: 'Registration failed. Please try again.' });
+    }
+});
+
 router.get('/budget', authMiddleware, requireShopId, async (req, res) => {
     try {
         const shopId = getShopId(req);

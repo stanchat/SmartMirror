@@ -16,6 +16,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api', adminApi);
 
 app.use('/admin', express.static(path.join(__dirname, 'admin')));
+app.use('/public', express.static(path.join(__dirname, 'public')));
 
 app.get('/admin', (req, res) => {
     res.sendFile(path.join(__dirname, 'admin', 'index.html'));
@@ -23,6 +24,10 @@ app.get('/admin', (req, res) => {
 
 app.get('/admin/login', (req, res) => {
     res.sendFile(path.join(__dirname, 'admin', 'login.html'));
+});
+
+app.get('/register/:shopSlug', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'register.html'));
 });
 
 console.log('Starting Telegram Bot...');

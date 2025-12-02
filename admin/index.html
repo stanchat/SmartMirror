@@ -1199,6 +1199,7 @@
             color: #22c55e;
         }
     </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
     <header class="header">
@@ -1480,6 +1481,33 @@
                     </div>
                 </form>
                 <div id="registrationStatus" style="display: none; margin-top: 16px; padding: 12px; border-radius: 8px;"></div>
+            </div>
+
+            <div class="section" style="background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(22, 163, 74, 0.05)); border: 1px solid rgba(34, 197, 94, 0.2);">
+                <div class="section-header">
+                    <h2>Self-Registration QR Code</h2>
+                    <button class="btn btn-secondary" onclick="generateQRCode()">Refresh</button>
+                </div>
+                <p class="section-description">
+                    Display this QR code in your shop or share the link. Customers can scan it to register themselves using their phone camera.
+                </p>
+                <div style="display: flex; align-items: center; gap: 24px; margin-top: 16px; flex-wrap: wrap;">
+                    <div id="qrCodeContainer" style="background: #fff; padding: 16px; border-radius: 12px; display: inline-block;">
+                        <div id="qrCode"></div>
+                    </div>
+                    <div style="flex: 1; min-width: 200px;">
+                        <div style="margin-bottom: 12px;">
+                            <label style="font-size: 12px; color: rgba(255,255,255,0.7); display: block; margin-bottom: 4px;">Registration Link</label>
+                            <div style="display: flex; gap: 8px;">
+                                <input type="text" id="registrationLink" readonly style="flex: 1; padding: 10px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: #fff; font-size: 12px;">
+                                <button class="btn btn-secondary" onclick="copyRegistrationLink()" style="padding: 10px 16px;">Copy</button>
+                            </div>
+                        </div>
+                        <p style="font-size: 12px; color: rgba(255,255,255,0.5); line-height: 1.4;">
+                            Customers take a selfie with their phone to register for automatic check-in recognition.
+                        </p>
+                    </div>
+                </div>
             </div>
 
             <div class="section">
@@ -3010,10 +3038,63 @@
             }
         });
 
+        let shopSlug = 'demo';
+        
+        async function loadShopInfo() {
+            try {
+                const response = await fetch('/api/auth/me', { headers: getAuthHeaders() });
+                const data = await response.json();
+                if (data.success && data.shop) {
+                    shopSlug = data.shop.slug || 'demo';
+                }
+            } catch (error) {
+                console.error('Failed to load shop info:', error);
+            }
+        }
+        
+        let qrCodeInstance = null;
+        
+        async function generateQRCode() {
+            await loadShopInfo();
+            const baseUrl = window.location.origin;
+            const registrationUrl = `${baseUrl}/register/${shopSlug}`;
+            
+            document.getElementById('registrationLink').value = registrationUrl;
+            
+            const qrContainer = document.getElementById('qrCode');
+            try {
+                qrContainer.innerHTML = '';
+                
+                if (typeof QRCode !== 'undefined') {
+                    qrCodeInstance = new QRCode(qrContainer, {
+                        text: registrationUrl,
+                        width: 160,
+                        height: 160,
+                        colorDark: '#1a1a2e',
+                        colorLight: '#ffffff',
+                        correctLevel: QRCode.CorrectLevel.H
+                    });
+                } else {
+                    qrContainer.innerHTML = '<div style="width:160px;height:160px;display:flex;align-items:center;justify-content:center;color:#666;font-size:12px;text-align:center;">QR library loading...</div>';
+                }
+            } catch (error) {
+                console.error('QR Code generation error:', error);
+                qrContainer.innerHTML = '<div style="width:160px;height:160px;display:flex;align-items:center;justify-content:center;color:#666;font-size:12px;text-align:center;">QR generation failed</div>';
+            }
+        }
+        
+        function copyRegistrationLink() {
+            const linkInput = document.getElementById('registrationLink');
+            linkInput.select();
+            document.execCommand('copy');
+            alert('Registration link copied to clipboard!');
+        }
+
         loadBudget();
         setInterval(loadBudget, 30000);
         
         populateCustomerDropdown();
+        generateQRCode();
     </script>
 </body>
 </html>

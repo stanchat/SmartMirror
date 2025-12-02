@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Customer Registration</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            color: #fff;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+
+        .header .shop-name {
+            color: #a855f7;
+            font-size: 18px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+
+        .step {
+            display: none;
+        }
+
+        .step.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #a855f7;
+        }
+
+        .form-group input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, opacity 0.2s;
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #a855f7, #7c3aed);
+            color: #fff;
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.2);
+            color: #fff;
+            margin-top: 10px;
+        }
+
+        .camera-container {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 1;
+            border-radius: 16px;
+            overflow: hidden;
+            background: #000;
+            margin-bottom: 20px;
+        }
+
+        #video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1);
+        }
+
+        #canvas {
+            display: none;
+        }
+
+        .face-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 200px;
+            height: 250px;
+            border: 3px dashed rgba(168, 85, 247, 0.5);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        .face-overlay.detected {
+            border-color: #22c55e;
+            border-style: solid;
+            box-shadow: 0 0 20px rgba(34, 197, 94, 0.3);
+        }
+
+        .status-indicator {
+            position: absolute;
+            bottom: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .status-indicator.searching {
+            background: rgba(234, 179, 8, 0.9);
+            color: #000;
+        }
+
+        .status-indicator.ready {
+            background: rgba(34, 197, 94, 0.9);
+            color: #fff;
+        }
+
+        .status-indicator.error {
+            background: rgba(239, 68, 68, 0.9);
+            color: #fff;
+        }
+
+        .preview-image {
+            width: 100%;
+            aspect-ratio: 1;
+            border-radius: 16px;
+            object-fit: cover;
+            margin-bottom: 20px;
+        }
+
+        .success-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 20px;
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+        }
+
+        .success-message {
+            text-align: center;
+        }
+
+        .success-message h2 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .success-message p {
+            color: rgba(255, 255, 255, 0.7);
+            line-height: 1.5;
+        }
+
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .spinner {
+            width: 24px;
+            height: 24px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .error-card {
+            background: rgba(239, 68, 68, 0.2);
+            border: 2px solid rgba(239, 68, 68, 0.5);
+            text-align: center;
+        }
+
+        .error-card h2 {
+            margin-bottom: 10px;
+        }
+
+        .privacy-note {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.5);
+            text-align: center;
+            margin-top: 20px;
+            line-height: 1.4;
+        }
+
+        .instructions {
+            background: rgba(168, 85, 247, 0.2);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .instructions ul {
+            margin-left: 20px;
+            margin-top: 8px;
+        }
+
+        .instructions li {
+            margin-bottom: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Customer Registration</h1>
+            <div class="shop-name" id="shopName">Loading...</div>
+        </div>
+
+        <div id="step1" class="step active">
+            <div class="card">
+                <div class="form-group">
+                    <label>Your Name</label>
+                    <input type="text" id="customerName" placeholder="Enter your name" autocomplete="name">
+                </div>
+                <div class="form-group">
+                    <label>Phone (optional)</label>
+                    <input type="tel" id="customerPhone" placeholder="For appointment reminders" autocomplete="tel">
+                </div>
+                <button class="btn btn-primary" id="nextBtn" onclick="goToCamera()">Continue to Photo</button>
+            </div>
+            <p class="privacy-note">
+                Your photo is used only for check-in recognition at this barbershop. 
+                We never share your data with third parties.
+            </p>
+        </div>
+
+        <div id="step2" class="step">
+            <div class="card">
+                <div class="instructions">
+                    <strong>Tips for a good photo:</strong>
+                    <ul>
+                        <li>Face the camera directly</li>
+                        <li>Good lighting on your face</li>
+                        <li>Remove sunglasses or hats</li>
+                    </ul>
+                </div>
+                <div class="camera-container">
+                    <video id="video" autoplay playsinline muted></video>
+                    <canvas id="canvas"></canvas>
+                    <div class="face-overlay" id="faceOverlay"></div>
+                    <div class="status-indicator searching" id="statusIndicator">Looking for face...</div>
+                </div>
+                <button class="btn btn-primary" id="captureBtn" disabled onclick="capturePhoto()">Take Photo</button>
+                <button class="btn btn-secondary" onclick="goBack()">Back</button>
+            </div>
+        </div>
+
+        <div id="step3" class="step">
+            <div class="card">
+                <img id="previewImage" class="preview-image" src="" alt="Your photo">
+                <button class="btn btn-primary" id="submitBtn" onclick="submitRegistration()">
+                    Complete Registration
+                </button>
+                <button class="btn btn-secondary" onclick="retakePhoto()">Retake Photo</button>
+            </div>
+        </div>
+
+        <div id="step4" class="step">
+            <div class="card success-message">
+                <div class="success-icon">✓</div>
+                <h2>Welcome!</h2>
+                <p id="successText">You're all set! Next time you visit, just look at the mirror and we'll recognize you automatically.</p>
+            </div>
+        </div>
+
+        <div id="stepError" class="step">
+            <div class="card error-card">
+                <h2>Oops!</h2>
+                <p id="errorText">Something went wrong. Please try again.</p>
+                <button class="btn btn-primary" onclick="location.reload()" style="margin-top: 20px;">Try Again</button>
+            </div>
+        </div>
+
+        <div id="stepLoading" class="step">
+            <div class="card">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <span>Processing your registration...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/modules/MMM-Face-Recognition-SMAI/face-api.js"></script>
+    <script>
+        const shopSlug = window.location.pathname.split('/').pop();
+        let shopData = null;
+        let videoStream = null;
+        let faceDetectionInterval = null;
+        let capturedImageData = null;
+        let faceDescriptor = null;
+
+        async function init() {
+            try {
+                const response = await fetch(`/api/public/shop/${shopSlug}`);
+                const data = await response.json();
+                
+                if (!data.success) {
+                    showError('Shop not found. Please check the registration link.');
+                    return;
+                }
+                
+                shopData = data.shop;
+                document.getElementById('shopName').textContent = shopData.name;
+                
+                await faceapi.nets.tinyFaceDetector.loadFromUri('/modules/MMM-Face-Recognition-SMAI/models');
+                await faceapi.nets.faceLandmark68Net.loadFromUri('/modules/MMM-Face-Recognition-SMAI/models');
+                await faceapi.nets.faceRecognitionNet.loadFromUri('/modules/MMM-Face-Recognition-SMAI/models');
+                
+            } catch (error) {
+                console.error('Init error:', error);
+                showError('Unable to load. Please check your connection and try again.');
+            }
+        }
+
+        function showStep(stepId) {
+            document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+            document.getElementById(stepId).classList.add('active');
+        }
+
+        function showError(message) {
+            document.getElementById('errorText').textContent = message;
+            showStep('stepError');
+        }
+
+        function goToCamera() {
+            const name = document.getElementById('customerName').value.trim();
+            if (!name) {
+                alert('Please enter your name');
+                return;
+            }
+            
+            showStep('step2');
+            startCamera();
+        }
+
+        function goBack() {
+            stopCamera();
+            showStep('step1');
+        }
+
+        async function startCamera() {
+            try {
+                const constraints = {
+                    video: {
+                        facingMode: 'user',
+                        width: { ideal: 640 },
+                        height: { ideal: 640 }
+                    }
+                };
+                
+                videoStream = await navigator.mediaDevices.getUserMedia(constraints);
+                const video = document.getElementById('video');
+                video.srcObject = videoStream;
+                
+                video.onloadedmetadata = () => {
+                    startFaceDetection();
+                };
+                
+            } catch (error) {
+                console.error('Camera error:', error);
+                showError('Unable to access camera. Please allow camera access and try again.');
+            }
+        }
+
+        function stopCamera() {
+            if (videoStream) {
+                videoStream.getTracks().forEach(track => track.stop());
+                videoStream = null;
+            }
+            if (faceDetectionInterval) {
+                clearInterval(faceDetectionInterval);
+                faceDetectionInterval = null;
+            }
+        }
+
+        async function startFaceDetection() {
+            const video = document.getElementById('video');
+            const overlay = document.getElementById('faceOverlay');
+            const status = document.getElementById('statusIndicator');
+            const captureBtn = document.getElementById('captureBtn');
+            
+            faceDetectionInterval = setInterval(async () => {
+                try {
+                    const detection = await faceapi
+                        .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
+                        .withFaceLandmarks()
+                        .withFaceDescriptor();
+                    
+                    if (detection) {
+                        overlay.classList.add('detected');
+                        status.className = 'status-indicator ready';
+                        status.textContent = 'Face detected - Ready!';
+                        captureBtn.disabled = false;
+                        faceDescriptor = Array.from(detection.descriptor);
+                    } else {
+                        overlay.classList.remove('detected');
+                        status.className = 'status-indicator searching';
+                        status.textContent = 'Looking for face...';
+                        captureBtn.disabled = true;
+                        faceDescriptor = null;
+                    }
+                } catch (error) {
+                    console.error('Detection error:', error);
+                }
+            }, 200);
+        }
+
+        async function capturePhoto() {
+            const video = document.getElementById('video');
+            const canvas = document.getElementById('canvas');
+            
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            
+            const ctx = canvas.getContext('2d');
+            ctx.translate(canvas.width, 0);
+            ctx.scale(-1, 1);
+            ctx.drawImage(video, 0, 0);
+            
+            capturedImageData = canvas.toDataURL('image/jpeg', 0.8);
+            document.getElementById('previewImage').src = capturedImageData;
+            
+            stopCamera();
+            showStep('step3');
+        }
+
+        function retakePhoto() {
+            capturedImageData = null;
+            faceDescriptor = null;
+            showStep('step2');
+            startCamera();
+        }
+
+        async function submitRegistration() {
+            const name = document.getElementById('customerName').value.trim();
+            const phone = document.getElementById('customerPhone').value.trim();
+            
+            if (!faceDescriptor) {
+                showError('Face data not captured. Please retake the photo.');
+                return;
+            }
+            
+            showStep('stepLoading');
+            
+            try {
+                const response = await fetch(`/api/public/register/${shopSlug}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name,
+                        phone: phone || null,
+                        face_descriptor: faceDescriptor,
+                        photo: capturedImageData
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('successText').textContent = 
+                        `Thanks ${name}! You're all set. Next time you visit ${shopData.name}, just look at the mirror and we'll recognize you automatically.`;
+                    showStep('step4');
+                } else if (response.status === 409) {
+                    showError('Someone with this name is already registered. Please use your full name or add a nickname to make it unique.');
+                } else if (response.status === 429) {
+                    showError('Too many registration attempts. Please wait a minute and try again.');
+                } else {
+                    showError(data.error || 'Registration failed. Please try again.');
+                }
+            } catch (error) {
+                console.error('Submit error:', error);
+                showError('Unable to complete registration. Please check your connection and try again.');
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>
