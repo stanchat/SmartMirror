@@ -9,6 +9,79 @@ SmartMirror is a modern, interactive display system designed specifically for ba
 
 ---
 
+## Try It Yourself
+
+Experience the live demo at: **https://barbermirror.replit.app**
+
+### Step 1: View the Mirror Display
+
+Visit **https://barbermirror.replit.app** to see what your customers would see:
+
+1. **Clock & Weather** - Real-time display in top corners
+2. **Messages Panel** (left side) - Shows Telegram messages and announcements
+3. **Appointments** (right side) - Today's scheduled appointments
+4. **News Feed** (bottom) - Scrolling headlines
+
+**Try the interactive features:**
+- Click **"Detect Face"** - Uses your camera to detect and greet you
+- Click **"Voice Command"** - Say "Mirror mirror, what time is it?"
+- Type a command in the text box like "show weather" and click Send
+
+### Step 2: Explore the Admin Panel
+
+Visit **https://barbermirror.replit.app/admin** to see the management dashboard:
+
+**Login credentials for demo:**
+- Username: `admin`
+- Password: `admin123`
+
+**Explore the tabs:**
+1. **Budget** - Track daily earnings, set revenue goals
+2. **Services** - Add/edit haircut services and prices
+3. **Telegram Bot** - See bot status and recent messages
+4. **Mirror Controls** - Send messages to the mirror display
+5. **Modules** - Enable/disable mirror features
+6. **Team** - Manage barbers (Admin only)
+7. **Mirrors** - Configure multiple mirror devices
+
+**Try it:** Go to "Mirror Controls" tab, type a message, and send it. Watch it appear on the mirror!
+
+### Step 3: Test the Telegram Bot
+
+Open Telegram and search for **@BarberMirrorBot**
+
+1. **Start the bot** - Send `/start` to begin
+2. **Main Menu** appears with options:
+   - Book Appointment
+   - My Appointments  
+   - Send Message to Mirror
+   - Shop Info
+
+**Booking flow:**
+1. Tap "Book Appointment"
+2. Select a service (e.g., Haircut)
+3. Choose a barber or "Any Available"
+4. Pick a date and time slot
+5. Confirm booking - it appears on the mirror!
+
+**Send a message:**
+1. Tap "Send Message to Mirror"
+2. Type your message
+3. Watch it appear on the mirror's Messages panel
+
+### Quick Demo Script
+
+For a 5-minute demo, show this flow:
+
+1. **Open the mirror** (https://barbermirror.replit.app) on a large screen
+2. **Open Telegram** on your phone with @BarberMirrorBot
+3. **Book an appointment** via the bot - watch it appear on mirror
+4. **Send a message** via bot - see it display instantly
+5. **Try voice command** - "Mirror mirror, show appointments"
+6. **Show admin panel** - demonstrate budget tracking and controls
+
+---
+
 ## Key Features
 
 ### 1. Interactive Mirror Display
