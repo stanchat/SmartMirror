@@ -35,6 +35,27 @@ router.get('/health', async (req, res) => {
     res.json(health);
 });
 
+router.get('/mirror/users', async (req, res) => {
+    try {
+        const shopId = req.query.shop_id || 1;
+        const users = await UsersRepo.getAll(shopId);
+        
+        const usersWithFaces = users.filter(u => u.face_descriptor && Array.isArray(u.face_descriptor) && u.face_descriptor.length === 128);
+        
+        res.json({
+            success: true,
+            users: usersWithFaces.map(u => ({
+                id: u.id,
+                name: u.name,
+                face_descriptor: u.face_descriptor
+            }))
+        });
+    } catch (err) {
+        console.error('Mirror users error:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
 router.get('/public/shop/:slug', async (req, res) => {
     try {
         const shop = await ShopsRepo.getBySlug(req.params.slug);
