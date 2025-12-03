@@ -56,6 +56,29 @@ router.get('/mirror/users', async (req, res) => {
     }
 });
 
+router.get('/mirror/messages', async (req, res) => {
+    try {
+        const shopId = req.query.shop_id || 1;
+        const messages = await MessagesRepo.getRecent(shopId, 20);
+        
+        res.json({
+            success: true,
+            messages: messages.map(m => ({
+                id: m.id,
+                timestamp: m.sent_at,
+                created_at: m.sent_at,
+                sender: m.sender,
+                text: m.text,
+                content: m.text,
+                isNew: m.is_new
+            }))
+        });
+    } catch (err) {
+        console.error('Mirror messages error:', err);
+        res.status(500).json({ success: false, error: err.message, messages: [] });
+    }
+});
+
 router.get('/public/shop/:slug', async (req, res) => {
     try {
         const shop = await ShopsRepo.getBySlug(req.params.slug);
