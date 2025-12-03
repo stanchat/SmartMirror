@@ -54,3 +54,40 @@ The SmartMirror platform is built using Node.js (v20.19.3) for the main applicat
 - **Python `asyncpg`**: Asynchronous PostgreSQL client for Python.
 - **MagicMirror²**: The foundational open-source smart mirror platform.
 - **NY Times API**: For news feed display on the mirror.
+
+## Future Enhancements
+
+### Google Cloud TTS/STT Integration (Optional Upgrade)
+The current implementation uses browser-native Web Speech API for voice recognition and text-to-speech. A previous version of this system used Google Cloud services which could be re-integrated for enhanced capabilities:
+
+**Google Text-to-Speech (gTTS)**
+- Higher quality, more natural-sounding voices
+- Supports multiple languages and accents
+- Generates MP3 files for audio playback
+- Works with external speakers (Bluetooth, USB)
+- Requires: `gTTS` Python package, audio player like `mpg123`
+
+**Google Speech-to-Text (STT)**
+- More accurate transcription than browser APIs
+- Better handling of accents and background noise
+- Works in headless/server environments
+- Requires: `SpeechRecognition` Python package with Google credentials
+
+**Implementation Considerations**
+- Requires Google Cloud API credentials
+- Incurs usage-based costs (free tier available)
+- Better suited for Raspberry Pi deployments with external speakers
+- Current Web Speech API is free and works well in browser environments
+
+**When to Consider Google Cloud Voice**
+- Deploying on Raspberry Pi with Bluetooth speakers
+- Need higher quality voice output
+- Require server-side voice processing
+- Operating in noisy environments where accuracy is critical
+
+**Current Implementation (Web Speech API)**
+- Zero cost, no API keys needed
+- Works directly in Chrome/Edge browsers
+- Voice gender selection (male/female)
+- Configurable rate, pitch, and volume
+- Sufficient for most mirror display use cases
