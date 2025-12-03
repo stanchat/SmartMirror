@@ -544,6 +544,27 @@
         .module-settings select {
             padding: 8px 12px;
             font-size: 13px;
+            background: rgba(30, 30, 50, 0.9) !important;
+            color: #ffffff !important;
+            border: 1px solid rgba(255, 255, 255, 0.2) !important;
+            border-radius: 8px;
+        }
+        
+        .module-settings input:focus,
+        .module-settings select:focus {
+            border-color: #7c3aed !important;
+            outline: none;
+        }
+        
+        .module-settings select option {
+            background: #1a1a2e;
+            color: #ffffff;
+        }
+        
+        .module-settings input[type="range"] {
+            background: transparent !important;
+            border: none !important;
+            padding: 0 !important;
         }
 
         .save-bar {

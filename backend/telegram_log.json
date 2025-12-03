@@ -1,5 +1,19 @@
 [
   {
+    "id": 1764767179711,
+    "timestamp": "2025-12-03T13:06:19.711Z",
+    "sender": "Admin",
+    "text": "[COMMAND] detect_face",
+    "isNew": true
+  },
+  {
+    "id": 1764767151146,
+    "timestamp": "2025-12-03T13:05:51.146Z",
+    "sender": "Admin",
+    "text": "[COMMAND] play_greeting",
+    "isNew": true
+  },
+  {
     "id": 1764521855296,
     "timestamp": "2025-11-30T16:57:35.296966",
     "sender": "Stan Lee Cee",
