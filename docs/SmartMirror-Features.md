@@ -117,6 +117,60 @@ Perfect for shop owners with multiple locations:
 
 ---
 
+## Deployment Options
+
+SmartMirror is cloud-hosted, so your display hardware just needs a web browser. Choose the option that fits your budget and needs.
+
+### Recommended Hardware
+
+| Option | Cost | Best For |
+|--------|------|----------|
+| **Android TV Box** | $40-60 | Most shops - affordable, reliable, easy setup |
+| **Amazon Fire TV Stick** | $30-50 | Budget option - plug and play |
+| **Orange Pi 5** | $60-90 | Tech-savvy owners wanting more control |
+| **Mini PC / Intel NUC** | $150-300 | Premium installs, maximum performance |
+| **Repurposed Laptop** | Free | Testing or budget-conscious shops |
+| **Smart TV with Browser** | Varies | Use your existing TV |
+
+### Kiosk Mode Setup
+
+The display runs in "kiosk mode" - fullscreen, locked to SmartMirror, auto-restarts if needed.
+
+**For Android/Fire TV:**
+- Install "Fully Kiosk Browser" app
+- Point to your SmartMirror URL
+- Device stays locked to the mirror display
+
+**For PC/Laptop:**
+- Chrome opens in fullscreen kiosk mode
+- Auto-starts when device powers on
+- No desktop or other apps visible
+
+### Audio Options
+
+For voice greetings and responses:
+- **Built-in speakers** - Use the TV or monitor's speakers
+- **Bluetooth speaker** - Connect any Bluetooth speaker for better sound
+- **Wired speakers** - USB or 3.5mm audio output
+
+### What You Need
+
+1. **Display** - Any TV or monitor (we recommend 32" or larger)
+2. **Display device** - Android box, Fire Stick, or mini PC
+3. **Internet** - WiFi or ethernet connection
+4. **Camera** (optional) - USB webcam for face recognition
+5. **Speaker** (optional) - For voice greetings
+
+### Installation Support
+
+We handle the initial setup:
+- Configure your shop account
+- Set up the Telegram bot
+- Help connect your first mirror
+- Train your team on the admin panel
+
+---
+
 ## Contact
 
 Ready to upgrade your barbershop experience?
