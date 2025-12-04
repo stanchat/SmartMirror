@@ -91,3 +91,26 @@ The current implementation uses browser-native Web Speech API for voice recognit
 - Voice gender selection (male/female)
 - Configurable rate, pitch, and volume
 - Sufficient for most mirror display use cases
+
+### AI-Powered Features (Planned)
+
+**Smart Service Recommendations**
+- Analyze customer visit history and preferences
+- Suggest services based on time since last visit ("It's been 4 weeks, time for a trim?")
+- Recommend add-on services based on past purchases
+- Seasonal suggestions (beard conditioning in winter, etc.)
+- Could integrate with OpenAI or similar for natural language recommendations
+
+**Virtual Hairstyle Try-On**
+- Customer sees their face on the mirror via camera
+- Overlay different hairstyles in real-time using AI image processing
+- Browse styles by category (fades, tapers, buzz cuts, etc.)
+- Save favorites to show the barber
+- Implementation options: AI image generation, GAN-based style transfer, or pre-made style overlays
+- Potential APIs: Replicate, RunwayML, or custom trained models
+
+**Implementation Considerations**
+- Requires AI/ML API integration (OpenAI, Replicate, etc.)
+- May incur per-request costs for image processing
+- Privacy considerations for face data processing
+- Could start with simpler overlay approach before full AI generation
