@@ -30,6 +30,10 @@ app.get('/register/:shopSlug', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'register.html'));
 });
 
+app.get('/features', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'features.html'));
+});
+
 console.log('Starting Telegram Bot...');
 const telegramBot = spawn('python', ['backend/telegram_bot.py'], {
     cwd: __dirname,
