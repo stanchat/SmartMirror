@@ -1,5 +1,12 @@
 [
   {
+    "id": 1764967003899,
+    "timestamp": "2025-12-05T20:36:43.899Z",
+    "sender": "Admin",
+    "text": "[COMMAND] detect_face",
+    "isNew": true
+  },
+  {
     "id": 1764767179711,
     "timestamp": "2025-12-03T13:06:19.711Z",
     "sender": "Admin",
