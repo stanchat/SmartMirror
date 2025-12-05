@@ -885,6 +885,8 @@ const RecognitionRepo = {
     }
 };
 
+const InstalledModulesRepo = require('./installedModulesRepo');
+
 module.exports = {
     ShopsRepo,
     BarbersRepo,
@@ -896,5 +898,6 @@ module.exports = {
     TransactionsRepo,
     MessagesRepo,
     BudgetRepo,
-    RecognitionRepo
+    RecognitionRepo,
+    InstalledModulesRepo
 };

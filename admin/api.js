@@ -2,7 +2,7 @@ const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const db = require('../backend/db');
-const { ServicesRepo, UsersRepo, AppointmentsRepo, TransactionsRepo, MessagesRepo, BudgetRepo, ShopsRepo, WalkInQueueRepo, BarbersRepo, MirrorsRepo } = require('../backend/db/repositories');
+const { ServicesRepo, UsersRepo, AppointmentsRepo, TransactionsRepo, MessagesRepo, BudgetRepo, ShopsRepo, WalkInQueueRepo, BarbersRepo, MirrorsRepo, InstalledModulesRepo } = require('../backend/db/repositories');
 const { authMiddleware, requireAdmin, ROLES } = require('../backend/auth/middleware');
 
 const router = express.Router();
@@ -1208,9 +1208,10 @@ router.get('/modules', (req, res) => {
     }
 });
 
-router.post('/modules', authMiddleware, requireAdmin, (req, res) => {
+router.post('/modules', authMiddleware, requireAdmin, async (req, res) => {
     try {
         const { modules } = req.body;
+        const shopId = getShopId(req);
         const configPath = path.join(__dirname, '../config/config.js');
         
         const moduleMapping = {
@@ -1247,6 +1248,15 @@ router.post('/modules', authMiddleware, requireAdmin, (req, res) => {
             configModules.push(mod);
         }
         
+        const installedModules = await InstalledModulesRepo.getEnabled(shopId);
+        for (const installed of installedModules) {
+            configModules.push({
+                module: installed.module_name,
+                position: installed.position || 'bottom_right',
+                config: installed.config || {}
+            });
+        }
+        
         let configContent = `/* SmartMirror Configuration - Auto-generated */
 let config = {
     address: "0.0.0.0",
@@ -1268,7 +1278,7 @@ let config = {
             configContent += `        {\n`;
             configContent += `            module: "${mod.module}",\n`;
             if (mod.position) configContent += `            position: "${mod.position}",\n`;
-            if (mod.config) {
+            if (mod.config && Object.keys(mod.config).length > 0) {
                 configContent += `            config: ${JSON.stringify(mod.config, null, 16).replace(/\n/g, '\n            ')}\n`;
             }
             configContent += `        },\n`;
@@ -1332,6 +1342,324 @@ if (typeof module !== "undefined") { module.exports = config; }
         fs.writeFileSync(configPath, configContent);
         res.json({ success: true, message: 'Configuration saved' });
     } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+const marketplaceCache = {
+    modules: [],
+    lastFetch: 0,
+    cacheTime: 1000 * 60 * 30
+};
+
+async function fetchMarketplaceModules() {
+    const now = Date.now();
+    if (marketplaceCache.modules.length > 0 && (now - marketplaceCache.lastFetch) < marketplaceCache.cacheTime) {
+        return marketplaceCache.modules;
+    }
+    
+    try {
+        const fetch = (await import('node-fetch')).default;
+        const response = await fetch('https://modules.magicmirror.builders/modules.json');
+        if (!response.ok) throw new Error('Failed to fetch modules');
+        
+        const data = await response.json();
+        marketplaceCache.modules = data.modules || [];
+        marketplaceCache.lastFetch = now;
+        return marketplaceCache.modules;
+    } catch (err) {
+        console.error('Marketplace fetch error:', err);
+        if (marketplaceCache.modules.length > 0) {
+            return marketplaceCache.modules;
+        }
+        return getHardcodedModules();
+    }
+}
+
+function getHardcodedModules() {
+    return [
+        {
+            name: "MMM-BackgroundSlideshow",
+            author: "darickc",
+            description: "Show fullscreen slideshow in background from images in a local folder. Great for a photo frame.",
+            url: "https://github.com/darickc/MMM-BackgroundSlideshow",
+            stars: 176,
+            category: "photos",
+            image: "https://modules.magicmirror.builders/images/MMM-BackgroundSlideshow---darickc---exampleImages-1.jpg"
+        },
+        {
+            name: "MMM-Carousel",
+            author: "shbatm",
+            description: "Create dynamic slideshows of your modules. Switch between different screens automatically or manually.",
+            url: "https://github.com/shbatm/MMM-Carousel",
+            stars: 53,
+            category: "navigation",
+            image: "https://modules.magicmirror.builders/images/MMM-Carousel---shbatm---img-example1-slide.jpg"
+        },
+        {
+            name: "MMM-CalendarExt3",
+            author: "MMRIZE",
+            description: "Lightweight calendar with week/month views, weather integration, and interactive popovers.",
+            url: "https://github.com/MMRIZE/MMM-CalendarExt3",
+            stars: 97,
+            category: "calendar",
+            image: "https://modules.magicmirror.builders/images/MMM-CalendarExt3---MMRIZE---screenshot.jpg"
+        },
+        {
+            name: "MMM-pages",
+            author: "edward-shen",
+            description: "Organize modules into multiple pages to display different information, with the option to automatically rotate.",
+            url: "https://github.com/edward-shen/MMM-pages",
+            stars: 135,
+            category: "navigation",
+            image: "https://modules.magicmirror.builders/images/MMM-pages---edward-shen---example.jpg"
+        },
+        {
+            name: "MMM-Remote-Control",
+            author: "Jopyth",
+            description: "Cleanly shutdown or reboot your mirror, install modules, and turn your monitor on and off from a web page.",
+            url: "https://github.com/Jopyth/MMM-Remote-Control",
+            stars: 568,
+            category: "control",
+            image: "https://modules.magicmirror.builders/images/MMM-Remote-Control---Jopyth---img-main_screenshot.jpg"
+        },
+        {
+            name: "MMM-OneCallWeather",
+            author: "KristjanESPERANTO",
+            description: "Display current and forecast weather based on Openweathermap OneCall API data with various icon sets.",
+            url: "https://github.com/KristjanESPERANTO/MMM-OneCallWeather",
+            stars: 9,
+            category: "weather",
+            image: "https://modules.magicmirror.builders/images/MMM-OneCallWeather---KristjanESPERANTO---screenshot_1_vertical_columns.jpg"
+        },
+        {
+            name: "MMM-anotherNewsFeed",
+            author: "MMRIZE",
+            description: "Modified version of the default newsfeed module with enhanced features and images.",
+            url: "https://github.com/MMRIZE/MMM-anotherNewsFeed",
+            stars: 2,
+            category: "news",
+            image: "https://modules.magicmirror.builders/images/MMM-anotherNewsFeed---MMRIZE---screenshot.jpg"
+        },
+        {
+            name: "MMM-Photoprism2",
+            author: "HeikoGr",
+            description: "Show pictures from Photoprism (local photo gallery). Enhanced version.",
+            url: "https://github.com/HeikoGr/MMM-Photoprism2",
+            stars: 1,
+            category: "photos",
+            image: "https://modules.magicmirror.builders/images/MMM-Photoprism2---HeikoGr---screenshot.jpg"
+        },
+        {
+            name: "MMM-WebSpeechTTS",
+            author: "KristjanESPERANTO",
+            description: "A text-to-speech module that uses the browser's Web Speech API. Let a voice greet you when MagicMirror starts.",
+            url: "https://github.com/KristjanESPERANTO/MMM-WebSpeechTTS",
+            stars: 6,
+            category: "voice",
+            image: "https://modules.magicmirror.builders/images/MMM-WebSpeechTTS---KristjanESPERANTO---.github-TTS.jpg"
+        },
+        {
+            name: "MMM-Rest",
+            author: "dathbe",
+            description: "Fetching REST data and display them on the mirror.",
+            url: "https://github.com/dathbe/MMM-Rest",
+            stars: 21,
+            category: "utility",
+            image: "https://modules.magicmirror.builders/images/MMM-Rest---dathbe---screenshot.jpg"
+        },
+        {
+            name: "MMM-ISS-Live",
+            author: "KristjanESPERANTO",
+            description: "Displays live video from the International Space Station.",
+            url: "https://github.com/KristjanESPERANTO/MMM-ISS-Live",
+            stars: 8,
+            category: "media",
+            image: "https://modules.magicmirror.builders/images/MMM-ISS-Live---KristjanESPERANTO---images-screenshot1.jpg"
+        },
+        {
+            name: "MMM-Mastodon",
+            author: "KristjanESPERANTO",
+            description: "Display Mastodon timelines, hashtags, and profiles with media thumbnails and QR codes.",
+            url: "https://github.com/KristjanESPERANTO/MMM-Mastodon",
+            stars: 1,
+            category: "social",
+            image: "https://modules.magicmirror.builders/images/MMM-Mastodon---KristjanESPERANTO---screenshot.jpg"
+        }
+    ];
+}
+
+router.get('/marketplace/modules', authMiddleware, requireShopId, async (req, res) => {
+    try {
+        const { search, category } = req.query;
+        let modules = await fetchMarketplaceModules();
+        
+        if (search) {
+            const searchLower = search.toLowerCase();
+            modules = modules.filter(m => 
+                m.name?.toLowerCase().includes(searchLower) ||
+                m.description?.toLowerCase().includes(searchLower) ||
+                m.author?.toLowerCase().includes(searchLower)
+            );
+        }
+        
+        if (category && category !== 'all') {
+            modules = modules.filter(m => m.category === category);
+        }
+        
+        modules.sort((a, b) => (b.stars || 0) - (a.stars || 0));
+        
+        res.json({
+            success: true,
+            modules: modules.slice(0, 50),
+            total: modules.length
+        });
+    } catch (err) {
+        console.error('Marketplace error:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+router.get('/marketplace/categories', authMiddleware, requireShopId, async (req, res) => {
+    try {
+        const categories = [
+            { id: 'all', name: 'All Modules', icon: 'grid' },
+            { id: 'calendar', name: 'Calendar', icon: 'calendar' },
+            { id: 'weather', name: 'Weather', icon: 'cloud' },
+            { id: 'news', name: 'News', icon: 'newspaper' },
+            { id: 'photos', name: 'Photos', icon: 'image' },
+            { id: 'navigation', name: 'Navigation', icon: 'layout' },
+            { id: 'control', name: 'Control', icon: 'settings' },
+            { id: 'voice', name: 'Voice', icon: 'mic' },
+            { id: 'social', name: 'Social', icon: 'users' },
+            { id: 'media', name: 'Media', icon: 'play' },
+            { id: 'utility', name: 'Utility', icon: 'tool' }
+        ];
+        res.json({ success: true, categories });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+router.get('/modules/installed', authMiddleware, requireShopId, async (req, res) => {
+    try {
+        const shopId = getShopId(req);
+        const modules = await InstalledModulesRepo.getAll(shopId);
+        
+        res.json({
+            success: true,
+            modules: modules.map(m => ({
+                id: m.id,
+                name: m.module_name,
+                author: m.author,
+                description: m.description,
+                image: m.image_url,
+                github_url: m.github_url,
+                position: m.position,
+                config: m.config,
+                is_enabled: m.is_enabled,
+                installed_at: m.installed_at
+            }))
+        });
+    } catch (err) {
+        console.error('Installed modules error:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+router.post('/modules/install', authMiddleware, requireShopId, async (req, res) => {
+    try {
+        const shopId = getShopId(req);
+        const { name, author, description, image, github_url, position, config } = req.body;
+        
+        if (!name) {
+            return res.status(400).json({ success: false, error: 'Module name is required' });
+        }
+        
+        const existing = await InstalledModulesRepo.getByName(shopId, name);
+        if (existing) {
+            return res.status(409).json({ success: false, error: 'Module already installed' });
+        }
+        
+        const module = await InstalledModulesRepo.install({
+            shop_id: shopId,
+            module_name: name,
+            author: author,
+            description: description,
+            image_url: image,
+            github_url: github_url,
+            position: position || 'bottom_right',
+            config: config || {}
+        });
+        
+        res.json({
+            success: true,
+            module: {
+                id: module.id,
+                name: module.module_name,
+                position: module.position,
+                is_enabled: module.is_enabled
+            },
+            message: 'Module installed successfully'
+        });
+    } catch (err) {
+        console.error('Module install error:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+router.delete('/modules/uninstall/:name', authMiddleware, requireShopId, async (req, res) => {
+    try {
+        const shopId = getShopId(req);
+        const moduleName = decodeURIComponent(req.params.name);
+        
+        const result = await InstalledModulesRepo.uninstall(shopId, moduleName);
+        if (!result) {
+            return res.status(404).json({ success: false, error: 'Module not found' });
+        }
+        
+        res.json({ success: true, message: 'Module uninstalled successfully' });
+    } catch (err) {
+        console.error('Module uninstall error:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+router.put('/modules/:name/config', authMiddleware, requireShopId, async (req, res) => {
+    try {
+        const shopId = getShopId(req);
+        const moduleName = decodeURIComponent(req.params.name);
+        const { config, position, is_enabled } = req.body;
+        
+        let module;
+        
+        if (config !== undefined) {
+            module = await InstalledModulesRepo.updateConfig(shopId, moduleName, config);
+        }
+        if (position !== undefined) {
+            module = await InstalledModulesRepo.updatePosition(shopId, moduleName, position);
+        }
+        if (is_enabled !== undefined) {
+            module = await InstalledModulesRepo.toggleEnabled(shopId, moduleName, is_enabled);
+        }
+        
+        if (!module) {
+            return res.status(404).json({ success: false, error: 'Module not found' });
+        }
+        
+        res.json({
+            success: true,
+            module: {
+                id: module.id,
+                name: module.module_name,
+                position: module.position,
+                config: module.config,
+                is_enabled: module.is_enabled
+            },
+            message: 'Module updated successfully'
+        });
+    } catch (err) {
+        console.error('Module config error:', err);
         res.status(500).json({ success: false, error: err.message });
     }
 });

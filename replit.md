@@ -14,8 +14,9 @@ The SmartMirror platform is built using Node.js (v20.19.3) for the main applicat
 ### UI/UX Decisions
 - **Mirror View (`/`)**: Customer-facing display with essential information like clock, date, calendar, weather, news, today's appointments, Telegram messages, and interactive face/voice recognition.
 - **Admin Panel (`/admin`)**: A role-based management dashboard requiring authentication, offering distinct functionalities for Admin and Barber roles.
-    - **Admin Role (7 tabs)**: Budget, Services, Telegram Bot, Mirror Controls, Modules, Team, Mirrors.
+    - **Admin Role (8 tabs)**: Budget, Services, Telegram Bot, Mirror Controls, Modules, Team, Mirrors, Marketplace.
     - **Barber Role (5 tabs)**: Budget (personal earnings), Services (view only), Telegram, Mirror Controls, Modules.
+- **Module Marketplace**: A "Marketplace" tab allows admins to browse, install, and configure 3rd party MagicMirror modules from the community. Modules are stored per-tenant and can be enabled/disabled with position configuration.
 - **Responsive Admin Panel**: Designed with breakpoints for tablet, mobile, and small phone, featuring scrollable tab navigation, touch-friendly buttons, and single-column stacking for forms on small screens.
 - **Module Configuration UI**: A "Modules" tab in the admin panel allows non-technical users to enable/disable modules, set positions, and configure module-specific settings, with a visual position guide.
 

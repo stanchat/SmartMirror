@@ -1219,6 +1219,272 @@
             background: rgba(34, 197, 94, 0.2);
             color: #22c55e;
         }
+        
+        .marketplace-controls {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        
+        .search-box {
+            flex: 1;
+            min-width: 250px;
+        }
+        
+        .search-box input {
+            width: 100%;
+            padding: 12px 16px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+            font-size: 14px;
+        }
+        
+        .search-box input::placeholder {
+            color: #666;
+        }
+        
+        .category-filters {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        
+        .filter-btn {
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: transparent;
+            color: #a0a0a0;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+        
+        .filter-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .filter-btn.active {
+            background: #7c3aed;
+            border-color: #7c3aed;
+            color: white;
+        }
+        
+        .modules-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        .module-card {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            overflow: hidden;
+            transition: all 0.2s;
+        }
+        
+        .module-card:hover {
+            border-color: rgba(124, 58, 237, 0.5);
+            transform: translateY(-2px);
+        }
+        
+        .module-card.installed {
+            border-color: rgba(34, 197, 94, 0.5);
+        }
+        
+        .module-image {
+            width: 100%;
+            height: 160px;
+            object-fit: cover;
+            background: rgba(0, 0, 0, 0.3);
+        }
+        
+        .module-image-placeholder {
+            width: 100%;
+            height: 160px;
+            background: linear-gradient(135deg, rgba(124, 58, 237, 0.2) 0%, rgba(59, 130, 246, 0.2) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+        }
+        
+        .module-content {
+            padding: 16px;
+        }
+        
+        .module-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+        
+        .module-name {
+            font-weight: 600;
+            font-size: 16px;
+            color: #fff;
+        }
+        
+        .module-stars {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            color: #f59e0b;
+            font-size: 13px;
+        }
+        
+        .module-author {
+            color: #666;
+            font-size: 13px;
+            margin-bottom: 8px;
+        }
+        
+        .module-description {
+            color: #a0a0a0;
+            font-size: 13px;
+            line-height: 1.5;
+            margin-bottom: 16px;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        
+        .module-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .module-actions .btn {
+            flex: 1;
+            padding: 10px;
+            font-size: 13px;
+        }
+        
+        .btn-install {
+            background: #7c3aed;
+        }
+        
+        .btn-install:hover {
+            background: #6d28d9;
+        }
+        
+        .btn-uninstall {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+        }
+        
+        .btn-uninstall:hover {
+            background: rgba(239, 68, 68, 0.3);
+        }
+        
+        .btn-configure {
+            background: rgba(59, 130, 246, 0.2);
+            color: #3b82f6;
+        }
+        
+        .btn-configure:hover {
+            background: rgba(59, 130, 246, 0.3);
+        }
+        
+        .btn-github {
+            background: rgba(255, 255, 255, 0.1);
+            color: #a0a0a0;
+        }
+        
+        .btn-github:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .installed-badge {
+            display: inline-block;
+            background: rgba(34, 197, 94, 0.2);
+            color: #22c55e;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .installed-modules-section {
+            margin-bottom: 24px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .installed-modules-section:empty,
+        .installed-modules-section .empty-state {
+            display: none;
+        }
+        
+        .module-position-select {
+            width: 100%;
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+            font-size: 13px;
+            margin-top: 8px;
+        }
+        
+        .module-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        
+        .toggle-switch {
+            position: relative;
+            width: 44px;
+            height: 24px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .toggle-switch.active {
+            background: #22c55e;
+        }
+        
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            width: 18px;
+            height: 18px;
+            background: white;
+            border-radius: 50%;
+            top: 3px;
+            left: 3px;
+            transition: transform 0.2s;
+        }
+        
+        .toggle-switch.active::after {
+            transform: translateX(20px);
+        }
+        
+        @media (max-width: 768px) {
+            .marketplace-controls {
+                flex-direction: column;
+            }
+            
+            .search-box {
+                width: 100%;
+            }
+            
+            .modules-grid {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
@@ -1239,6 +1505,7 @@
         <button class="tab" onclick="switchTab('telegram')">💬 Telegram Bot</button>
         <button class="tab" onclick="switchTab('controls')">🎛️ Mirror Controls</button>
         <button class="tab admin-only" onclick="switchTab('modules')">🧩 Modules</button>
+        <button class="tab admin-only" onclick="switchTab('marketplace')">🛒 Marketplace</button>
     </div>
 
     <div class="container">
@@ -1673,6 +1940,39 @@
                 </div>
             </div>
         </div>
+
+        <!-- Marketplace Tab -->
+        <div id="marketplace-tab" class="tab-content">
+            <div class="section">
+                <div class="section-header">
+                    <h2>Module Marketplace</h2>
+                </div>
+                <p class="section-description">
+                    Browse and install community modules from the MagicMirror ecosystem. These add extra features like photo slideshows, advanced calendars, smart home controls, and more.
+                </p>
+                
+                <div class="marketplace-controls">
+                    <div class="search-box">
+                        <input type="text" id="marketplaceSearch" placeholder="Search modules..." onkeyup="searchMarketplace()">
+                    </div>
+                    <div class="category-filters" id="categoryFilters">
+                        <button class="filter-btn active" onclick="filterByCategory('all')">All</button>
+                    </div>
+                </div>
+                
+                <div id="installedModulesSection" class="installed-modules-section">
+                    <h3 style="margin-bottom: 16px; color: #22c55e;">Installed Modules</h3>
+                    <div id="installedModulesList" class="modules-grid">
+                        <div class="loading">Loading installed modules...</div>
+                    </div>
+                </div>
+                
+                <h3 style="margin: 24px 0 16px; color: #a0a0a0;">Available Modules</h3>
+                <div id="marketplaceModules" class="modules-grid">
+                    <div class="loading">Loading marketplace...</div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div class="save-bar hidden" id="saveBar">
@@ -1880,6 +2180,9 @@
             } else if (tabName === 'queue') {
                 loadQueue();
                 loadQueueDropdowns();
+            } else if (tabName === 'marketplace') {
+                loadMarketplace();
+                loadInstalledModules();
             }
         }
 
@@ -3141,6 +3444,266 @@
         
         populateCustomerDropdown();
         generateQRCode();
+        
+        let marketplaceModules = [];
+        let installedModules = [];
+        let currentCategory = 'all';
+        
+        async function loadMarketplace() {
+            const container = document.getElementById('marketplaceModules');
+            container.innerHTML = '<div class="loading">Loading marketplace...</div>';
+            
+            try {
+                const search = document.getElementById('marketplaceSearch')?.value || '';
+                const url = `/api/marketplace/modules?category=${currentCategory}&search=${encodeURIComponent(search)}`;
+                const response = await fetch(url, { headers: getAuthHeaders() });
+                const data = await response.json();
+                
+                if (data.success) {
+                    marketplaceModules = data.modules;
+                    renderMarketplaceModules();
+                    loadCategories();
+                } else {
+                    container.innerHTML = '<div class="empty-state">Failed to load marketplace</div>';
+                }
+            } catch (error) {
+                console.error('Marketplace error:', error);
+                container.innerHTML = '<div class="empty-state">Failed to load marketplace</div>';
+            }
+        }
+        
+        async function loadCategories() {
+            try {
+                const response = await fetch('/api/marketplace/categories', { headers: getAuthHeaders() });
+                const data = await response.json();
+                
+                if (data.success) {
+                    const container = document.getElementById('categoryFilters');
+                    container.innerHTML = data.categories.map(cat => 
+                        `<button class="filter-btn ${cat.id === currentCategory ? 'active' : ''}" 
+                                 onclick="filterByCategory('${cat.id}')">${cat.name}</button>`
+                    ).join('');
+                }
+            } catch (error) {
+                console.error('Categories error:', error);
+            }
+        }
+        
+        async function loadInstalledModules() {
+            try {
+                const response = await fetch('/api/modules/installed', { headers: getAuthHeaders() });
+                const data = await response.json();
+                
+                if (data.success) {
+                    installedModules = data.modules;
+                    renderInstalledModules();
+                }
+            } catch (error) {
+                console.error('Installed modules error:', error);
+            }
+        }
+        
+        function renderMarketplaceModules() {
+            const container = document.getElementById('marketplaceModules');
+            const installedNames = installedModules.map(m => m.name);
+            
+            const availableModules = marketplaceModules.filter(m => !installedNames.includes(m.name));
+            
+            if (availableModules.length === 0) {
+                container.innerHTML = '<div class="empty-state">No modules found. Try a different search or category.</div>';
+                return;
+            }
+            
+            container.innerHTML = availableModules.map(mod => `
+                <div class="module-card">
+                    ${mod.image ? 
+                        `<img src="${mod.image}" alt="${mod.name}" class="module-image" onerror="this.parentNode.querySelector('.module-image').outerHTML='<div class=\\'module-image-placeholder\\'>🧩</div>'">` :
+                        `<div class="module-image-placeholder">🧩</div>`
+                    }
+                    <div class="module-content">
+                        <div class="module-header">
+                            <span class="module-name">${mod.name}</span>
+                            ${mod.stars ? `<span class="module-stars">⭐ ${mod.stars}</span>` : ''}
+                        </div>
+                        <div class="module-author">by ${mod.author || 'Unknown'}</div>
+                        <div class="module-description">${mod.description || 'No description available'}</div>
+                        <div class="module-actions">
+                            <button class="btn btn-install" onclick="installModule('${escapeHtml(mod.name)}', '${escapeHtml(mod.author || '')}', '${escapeHtml(mod.description || '')}', '${escapeHtml(mod.image || '')}', '${escapeHtml(mod.url || '')}')">
+                                Install
+                            </button>
+                            ${mod.url ? `<button class="btn btn-github" onclick="window.open('${mod.url}', '_blank')">GitHub</button>` : ''}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function renderInstalledModules() {
+            const container = document.getElementById('installedModulesList');
+            const section = document.getElementById('installedModulesSection');
+            
+            if (installedModules.length === 0) {
+                section.style.display = 'none';
+                return;
+            }
+            
+            section.style.display = 'block';
+            
+            container.innerHTML = installedModules.map(mod => `
+                <div class="module-card installed">
+                    ${mod.image ? 
+                        `<img src="${mod.image}" alt="${mod.name}" class="module-image" onerror="this.outerHTML='<div class=\\'module-image-placeholder\\'>🧩</div>'">` :
+                        `<div class="module-image-placeholder">🧩</div>`
+                    }
+                    <div class="module-content">
+                        <div class="module-header">
+                            <span class="module-name">${mod.name}</span>
+                            <span class="installed-badge">Installed</span>
+                        </div>
+                        <div class="module-author">by ${mod.author || 'Unknown'}</div>
+                        <div class="module-description">${mod.description || 'No description available'}</div>
+                        
+                        <div class="module-toggle">
+                            <div class="toggle-switch ${mod.is_enabled ? 'active' : ''}" 
+                                 onclick="toggleModule('${escapeHtml(mod.name)}', ${!mod.is_enabled})"></div>
+                            <span style="color: #a0a0a0; font-size: 13px;">${mod.is_enabled ? 'Enabled' : 'Disabled'}</span>
+                        </div>
+                        
+                        <select class="module-position-select" onchange="updateModulePosition('${escapeHtml(mod.name)}', this.value)">
+                            <option value="top_bar" ${mod.position === 'top_bar' ? 'selected' : ''}>Top Bar</option>
+                            <option value="top_left" ${mod.position === 'top_left' ? 'selected' : ''}>Top Left</option>
+                            <option value="top_center" ${mod.position === 'top_center' ? 'selected' : ''}>Top Center</option>
+                            <option value="top_right" ${mod.position === 'top_right' ? 'selected' : ''}>Top Right</option>
+                            <option value="upper_third" ${mod.position === 'upper_third' ? 'selected' : ''}>Upper Third</option>
+                            <option value="middle_center" ${mod.position === 'middle_center' ? 'selected' : ''}>Middle Center</option>
+                            <option value="lower_third" ${mod.position === 'lower_third' ? 'selected' : ''}>Lower Third</option>
+                            <option value="bottom_left" ${mod.position === 'bottom_left' ? 'selected' : ''}>Bottom Left</option>
+                            <option value="bottom_center" ${mod.position === 'bottom_center' ? 'selected' : ''}>Bottom Center</option>
+                            <option value="bottom_right" ${mod.position === 'bottom_right' ? 'selected' : ''}>Bottom Right</option>
+                            <option value="bottom_bar" ${mod.position === 'bottom_bar' ? 'selected' : ''}>Bottom Bar</option>
+                        </select>
+                        
+                        <div class="module-actions" style="margin-top: 12px;">
+                            ${mod.github_url ? `<button class="btn btn-github" onclick="window.open('${mod.github_url}', '_blank')">Docs</button>` : ''}
+                            <button class="btn btn-uninstall" onclick="uninstallModule('${escapeHtml(mod.name)}')">Uninstall</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/'/g, "\\'").replace(/"/g, '\\"');
+        }
+        
+        async function installModule(name, author, description, image, githubUrl) {
+            if (!confirm(`Install "${name}" module?`)) return;
+            
+            try {
+                const response = await fetch('/api/modules/install', {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({
+                        name: name,
+                        author: author,
+                        description: description,
+                        image: image,
+                        github_url: githubUrl,
+                        position: 'bottom_right'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('Module installed successfully! Configure its position and settings above.');
+                    loadInstalledModules();
+                    renderMarketplaceModules();
+                } else {
+                    alert(data.error || 'Failed to install module');
+                }
+            } catch (error) {
+                console.error('Install error:', error);
+                alert('Failed to install module');
+            }
+        }
+        
+        async function uninstallModule(name) {
+            if (!confirm(`Uninstall "${name}" module?`)) return;
+            
+            try {
+                const response = await fetch(`/api/modules/uninstall/${encodeURIComponent(name)}`, {
+                    method: 'DELETE',
+                    headers: getAuthHeaders()
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('Module uninstalled');
+                    loadInstalledModules();
+                    loadMarketplace();
+                } else {
+                    alert(data.error || 'Failed to uninstall module');
+                }
+            } catch (error) {
+                console.error('Uninstall error:', error);
+                alert('Failed to uninstall module');
+            }
+        }
+        
+        async function toggleModule(name, enabled) {
+            try {
+                const response = await fetch(`/api/modules/${encodeURIComponent(name)}/config`, {
+                    method: 'PUT',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ is_enabled: enabled })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    loadInstalledModules();
+                }
+            } catch (error) {
+                console.error('Toggle error:', error);
+            }
+        }
+        
+        async function updateModulePosition(name, position) {
+            try {
+                const response = await fetch(`/api/modules/${encodeURIComponent(name)}/config`, {
+                    method: 'PUT',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ position: position })
+                });
+                
+                const data = await response.json();
+                
+                if (!data.success) {
+                    alert('Failed to update position');
+                    loadInstalledModules();
+                }
+            } catch (error) {
+                console.error('Position update error:', error);
+            }
+        }
+        
+        function filterByCategory(category) {
+            currentCategory = category;
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            loadMarketplace();
+        }
+        
+        let searchTimeout;
+        function searchMarketplace() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                loadMarketplace();
+            }, 300);
+        }
     </script>
 </body>
 </html>
