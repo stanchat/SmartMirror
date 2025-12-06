@@ -4,6 +4,7 @@ const path = require('path');
 const db = require('../backend/db');
 const { ServicesRepo, UsersRepo, AppointmentsRepo, TransactionsRepo, MessagesRepo, BudgetRepo, ShopsRepo, WalkInQueueRepo, BarbersRepo, MirrorsRepo, InstalledModulesRepo } = require('../backend/db/repositories');
 const { authMiddleware, requireAdmin, ROLES } = require('../backend/auth/middleware');
+const smsService = require('../backend/sms_service');
 
 const router = express.Router();
 
@@ -1661,6 +1662,112 @@ router.put('/modules/:name/config', authMiddleware, requireShopId, async (req, r
     } catch (err) {
         console.error('Module config error:', err);
         res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+router.get('/sms/status', authMiddleware, requireShopId, async (req, res) => {
+    try {
+        const isConfigured = await smsService.isTwilioConfigured();
+        const fromNumber = isConfigured ? await smsService.getTwilioFromPhoneNumber() : null;
+        
+        res.json({
+            success: true,
+            configured: isConfigured,
+            from_number: fromNumber
+        });
+    } catch (err) {
+        res.json({
+            success: true,
+            configured: false,
+            error: err.message
+        });
+    }
+});
+
+router.post('/sms/send', authMiddleware, requireShopId, async (req, res) => {
+    try {
+        const { to, message } = req.body;
+        
+        if (!to || !message) {
+            return res.status(400).json({ success: false, error: 'Phone number and message required' });
+        }
+        
+        const result = await smsService.sendSMS(to, message);
+        res.json(result);
+    } catch (err) {
+        console.error('SMS send error:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+router.post('/sms/reminder', authMiddleware, requireShopId, async (req, res) => {
+    try {
+        const shopId = getShopId(req);
+        const { appointment_id } = req.body;
+        
+        const appointment = await AppointmentsRepo.getById(shopId, appointment_id);
+        if (!appointment) {
+            return res.status(404).json({ success: false, error: 'Appointment not found' });
+        }
+        
+        if (!appointment.phone_number) {
+            return res.status(400).json({ success: false, error: 'No phone number for this customer' });
+        }
+        
+        const result = await smsService.sendAppointmentReminder(appointment, { phone_number: appointment.phone_number });
+        
+        if (result.success) {
+            await db.query(
+                'UPDATE appointments SET sms_reminder_sent = true WHERE id = $1 AND shop_id = $2',
+                [appointment_id, shopId]
+            );
+        }
+        
+        res.json(result);
+    } catch (err) {
+        console.error('SMS reminder error:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+router.post('/walkin/:id/notify', authMiddleware, requireShopId, async (req, res) => {
+    try {
+        const shopId = getShopId(req);
+        const entryId = parseInt(req.params.id);
+        
+        const entry = await WalkInQueueRepo.getById(shopId, entryId);
+        if (!entry) {
+            return res.status(404).json({ success: false, error: 'Queue entry not found' });
+        }
+        
+        if (!entry.phone_number) {
+            return res.status(400).json({ success: false, error: 'No phone number for this customer' });
+        }
+        
+        const result = await smsService.sendWalkInReady(entry);
+        res.json(result);
+    } catch (err) {
+        console.error('Walk-in notify error:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+router.post('/sms/webhook', express.urlencoded({ extended: false }), async (req, res) => {
+    try {
+        const { From, Body, To } = req.body;
+        console.log(`SMS received from ${From}: ${Body}`);
+        
+        const response = Body.trim().toUpperCase();
+        
+        if (response === 'CONFIRM' || response === 'CANCEL') {
+            console.log(`Appointment ${response.toLowerCase()} request from ${From}`);
+        }
+        
+        res.type('text/xml');
+        res.send('<?xml version="1.0" encoding="UTF-8"?><Response></Response>');
+    } catch (err) {
+        console.error('SMS webhook error:', err);
+        res.status(500).send('Error');
     }
 });
 

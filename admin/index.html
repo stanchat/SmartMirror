@@ -1503,6 +1503,7 @@
         <button class="tab admin-only" onclick="switchTab('mirrors')">🪞 Mirrors</button>
         <button class="tab" onclick="switchTab('queue')">📋 Queue</button>
         <button class="tab" onclick="switchTab('telegram')">💬 Telegram Bot</button>
+        <button class="tab admin-only" onclick="switchTab('sms')">📱 SMS</button>
         <button class="tab" onclick="switchTab('controls')">🎛️ Mirror Controls</button>
         <button class="tab admin-only" onclick="switchTab('modules')">🧩 Modules</button>
         <button class="tab admin-only" onclick="switchTab('marketplace')">🛒 Marketplace</button>
@@ -1745,6 +1746,107 @@
                 <ul class="message-list" id="messageList">
                     <li class="loading">Loading messages...</li>
                 </ul>
+            </div>
+        </div>
+
+        <!-- SMS Tab -->
+        <div id="sms-tab" class="tab-content">
+            <div class="section section-highlight">
+                <div class="section-header">
+                    <h2>SMS Status</h2>
+                    <button class="btn btn-secondary" onclick="checkSmsStatus()">Check Connection</button>
+                </div>
+                <div id="smsStatus" class="status-display">
+                    <div class="status-item">
+                        <span class="status-dot gray"></span>
+                        <span>Checking Twilio connection...</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-header">
+                    <h2>Send Test SMS</h2>
+                </div>
+                <p class="section-description">
+                    Send a test message to verify your SMS setup is working correctly.
+                </p>
+                <form id="testSmsForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="testPhone">Phone Number</label>
+                            <input type="tel" id="testPhone" placeholder="+1234567890" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="testMessage">Message</label>
+                            <input type="text" id="testMessage" value="Test from SmartMirror" required>
+                        </div>
+                        <div class="form-group form-group-btn">
+                            <button type="submit" class="btn btn-gradient">Send Test</button>
+                        </div>
+                    </div>
+                </form>
+                <div id="smsTestResult" style="display: none; margin-top: 16px; padding: 12px; border-radius: 8px;"></div>
+            </div>
+
+            <div class="section">
+                <div class="section-header">
+                    <h2>SMS Features</h2>
+                </div>
+                <div class="feature-cards">
+                    <div class="feature-card">
+                        <div class="feature-icon">📅</div>
+                        <h4>Appointment Reminders</h4>
+                        <p>Automatically send SMS reminders before appointments. Customers can reply CONFIRM or CANCEL.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">📋</div>
+                        <h4>Walk-in Queue Alerts</h4>
+                        <p>Notify customers when it's their turn. Great for busy shops where customers can wait nearby.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">📱</div>
+                        <h4>No App Required</h4>
+                        <p>Works with any phone - no need for customers to install Telegram or any other app.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-header">
+                    <h2>SMS Pricing Info</h2>
+                </div>
+                <p class="section-description">
+                    SMS is powered by Twilio. Typical costs are about $0.0079 per message in the US. 
+                    A shop sending 100 reminders/month would cost around $0.79/month.
+                </p>
+                <table class="info-table" style="width: 100%; margin-top: 16px;">
+                    <tr>
+                        <th style="text-align: left; padding: 8px; border-bottom: 1px solid rgba(255,255,255,0.1);">Feature</th>
+                        <th style="text-align: left; padding: 8px; border-bottom: 1px solid rgba(255,255,255,0.1);">SMS</th>
+                        <th style="text-align: left; padding: 8px; border-bottom: 1px solid rgba(255,255,255,0.1);">Telegram</th>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px;">Cost per message</td>
+                        <td style="padding: 8px;">~$0.008</td>
+                        <td style="padding: 8px;">Free</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px;">Customer app required</td>
+                        <td style="padding: 8px;">No</td>
+                        <td style="padding: 8px;">Yes</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px;">Rich media (images)</td>
+                        <td style="padding: 8px;">MMS extra</td>
+                        <td style="padding: 8px;">Yes</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px;">Interactive menus</td>
+                        <td style="padding: 8px;">Basic</td>
+                        <td style="padding: 8px;">Full</td>
+                    </tr>
+                </table>
             </div>
         </div>
 
@@ -2183,6 +2285,8 @@
             } else if (tabName === 'marketplace') {
                 loadMarketplace();
                 loadInstalledModules();
+            } else if (tabName === 'sms') {
+                checkSmsStatus();
             }
         }
 
@@ -3704,6 +3808,76 @@
                 loadMarketplace();
             }, 300);
         }
+
+        async function checkSmsStatus() {
+            const statusDiv = document.getElementById('smsStatus');
+            statusDiv.innerHTML = '<div class="status-item"><span class="status-dot gray"></span><span>Checking Twilio connection...</span></div>';
+            
+            try {
+                const response = await fetch('/api/sms/status', { headers: getAuthHeaders() });
+                const data = await response.json();
+                
+                if (data.configured) {
+                    statusDiv.innerHTML = `
+                        <div class="status-item">
+                            <span class="status-dot green"></span>
+                            <span>Twilio Connected</span>
+                        </div>
+                        <div class="status-item" style="margin-top: 8px;">
+                            <span style="color: rgba(255,255,255,0.7);">From Number: ${data.from_number || 'Not set'}</span>
+                        </div>
+                    `;
+                } else {
+                    statusDiv.innerHTML = `
+                        <div class="status-item">
+                            <span class="status-dot red"></span>
+                            <span>Twilio Not Connected</span>
+                        </div>
+                        <div style="margin-top: 8px; color: rgba(255,255,255,0.7); font-size: 13px;">
+                            Configure Twilio in Replit integrations to enable SMS
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                statusDiv.innerHTML = `
+                    <div class="status-item">
+                        <span class="status-dot red"></span>
+                        <span>Error checking status</span>
+                    </div>
+                `;
+            }
+        }
+        
+        document.getElementById('testSmsForm')?.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const resultDiv = document.getElementById('smsTestResult');
+            const phone = document.getElementById('testPhone').value;
+            const message = document.getElementById('testMessage').value;
+            
+            resultDiv.style.display = 'block';
+            resultDiv.style.background = 'rgba(255,255,255,0.1)';
+            resultDiv.innerHTML = 'Sending...';
+            
+            try {
+                const response = await fetch('/api/sms/send', {
+                    method: 'POST',
+                    headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ to: phone, message })
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.style.background = 'rgba(34, 197, 94, 0.2)';
+                    resultDiv.innerHTML = `SMS sent successfully! Message ID: ${data.sid}`;
+                } else {
+                    resultDiv.style.background = 'rgba(239, 68, 68, 0.2)';
+                    resultDiv.innerHTML = `Failed to send: ${data.error}`;
+                }
+            } catch (error) {
+                resultDiv.style.background = 'rgba(239, 68, 68, 0.2)';
+                resultDiv.innerHTML = `Error: ${error.message}`;
+            }
+        });
     </script>
 </body>
 </html>

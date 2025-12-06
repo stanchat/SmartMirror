@@ -14,7 +14,7 @@ The SmartMirror platform is built using Node.js (v20.19.3) for the main applicat
 ### UI/UX Decisions
 - **Mirror View (`/`)**: Customer-facing display with essential information like clock, date, calendar, weather, news, today's appointments, Telegram messages, and interactive face/voice recognition.
 - **Admin Panel (`/admin`)**: A role-based management dashboard requiring authentication, offering distinct functionalities for Admin and Barber roles.
-    - **Admin Role (8 tabs)**: Budget, Services, Telegram Bot, Mirror Controls, Modules, Team, Mirrors, Marketplace.
+    - **Admin Role (9 tabs)**: Budget, Services, Team, Mirrors, Queue, Telegram Bot, SMS, Mirror Controls, Modules, Marketplace.
     - **Barber Role (5 tabs)**: Budget (personal earnings), Services (view only), Telegram, Mirror Controls, Modules.
 - **Module Marketplace**: A "Marketplace" tab allows admins to browse, install, and configure 3rd party MagicMirror modules from the community. Modules are stored per-tenant and can be enabled/disabled with position configuration.
 - **Responsive Admin Panel**: Designed with breakpoints for tablet, mobile, and small phone, featuring scrollable tab navigation, touch-friendly buttons, and single-column stacking for forms on small screens.
@@ -24,6 +24,7 @@ The SmartMirror platform is built using Node.js (v20.19.3) for the main applicat
 - **Face Recognition**: Combines Microsoft Azure Face API for cloud-based detection of face attributes (age, gender, emotions) and local `face-api.js` for 100% local face recognition and descriptor storage. Includes a registration system via admin panel or voice command, and retries for reliability.
 - **Voice Commands**: Leverages the browser's Web Speech API for speech recognition with a "Mirror mirror..." wake phrase and text-to-speech responses.
 - **Telegram Bot Integration**: A Python-based Telegram bot (`@BarberMirrorBot`) acts as a mobile-friendly admin console, offering interactive menus for financial tracking, appointment management, customer history, mirror remote control, and message relay to the mirror.
+- **SMS Notifications (Twilio)**: Alternative to Telegram for customers who don't want to install an app. Sends appointment reminders and walk-in queue notifications via text message. Low cost (~$0.008/message).
 - **Status Indicators**: Visual cues for Camera Ready, Voice Ready, and Azure Connected.
 - **Core MagicMirror Modules**: Utilizes and customizes MagicMirror² modules for display functionalities.
 - **Custom Modules**:
