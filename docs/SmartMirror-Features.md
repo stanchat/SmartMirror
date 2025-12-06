@@ -114,7 +114,16 @@ Manage your shop from your phone:
 - **View customer history** and preferences
 - **Remote mirror control** from anywhere
 
-### 5. Multi-Tenant Architecture
+### 5. SMS Notifications (Twilio)
+Alternative to Telegram for customers who prefer text messages:
+- **Appointment reminders** - Automatic texts before scheduled visits
+- **Booking confirmations** - Instant confirmation when appointments are made
+- **Walk-in queue updates** - "You're #3 in line, ~15 min wait"
+- **Ready notifications** - "Your barber is ready for you!"
+- **Low cost** - Only ~$0.008 per message
+- **No app required** - Works on any phone with SMS
+
+### 6. Multi-Tenant Architecture
 Perfect for shop owners with multiple locations:
 - **Separate data** for each barbershop
 - **Multiple mirrors** per location
@@ -164,12 +173,13 @@ Perfect for shop owners with multiple locations:
 
 1. SmartMirror web application
 2. Telegram bot for mobile management
-3. Admin panel for configuration
-4. Face recognition system
-5. Voice command interface
-6. Multi-barber support
-7. Appointment scheduling
-8. Budget tracking tools
+3. SMS notifications via Twilio
+4. Admin panel for configuration
+5. Face recognition system
+6. Voice command interface
+7. Multi-barber support
+8. Appointment scheduling
+9. Budget tracking tools
 
 ---
 
