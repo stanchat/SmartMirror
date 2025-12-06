@@ -34,14 +34,16 @@ const MM = (function () {
 			wrapper.appendChild(dom);
 
 			const moduleHeader = document.createElement("header");
-			moduleHeader.innerHTML = module.getHeader();
+			const headerContent = module.getHeader();
+			const safeHeader = (headerContent && headerContent !== "undefined") ? headerContent : "";
+			moduleHeader.innerHTML = safeHeader;
 			moduleHeader.className = "module-header";
 			dom.appendChild(moduleHeader);
 
-			if (typeof module.getHeader() === "undefined" || module.getHeader() !== "") {
-				moduleHeader.style.display = "none;";
+			if (!safeHeader) {
+				moduleHeader.style.display = "none";
 			} else {
-				moduleHeader.style.display = "block;";
+				moduleHeader.style.display = "block";
 			}
 
 			const moduleContent = document.createElement("div");
