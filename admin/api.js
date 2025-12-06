@@ -1752,6 +1752,26 @@ router.post('/walkin/:id/notify', authMiddleware, requireShopId, async (req, res
     }
 });
 
+router.get('/sms/messages', authMiddleware, requireShopId, async (req, res) => {
+    try {
+        const result = await smsService.getRecentMessages(20);
+        res.json(result);
+    } catch (err) {
+        console.error('Get messages error:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+router.get('/sms/message/:sid', authMiddleware, requireShopId, async (req, res) => {
+    try {
+        const result = await smsService.getMessageStatus(req.params.sid);
+        res.json(result);
+    } catch (err) {
+        console.error('Get message status error:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
 router.post('/sms/webhook', express.urlencoded({ extended: false }), async (req, res) => {
     try {
         const { From, Body, To } = req.body;

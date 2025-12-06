@@ -124,6 +124,50 @@ async function isTwilioConfigured() {
     }
 }
 
+async function getMessageStatus(messageSid) {
+    try {
+        const client = await getTwilioClient();
+        const message = await client.messages(messageSid).fetch();
+        return {
+            success: true,
+            sid: message.sid,
+            status: message.status,
+            errorCode: message.errorCode,
+            errorMessage: message.errorMessage,
+            to: message.to,
+            from: message.from,
+            dateSent: message.dateSent,
+            dateCreated: message.dateCreated
+        };
+    } catch (error) {
+        console.error('Get message status error:', error.message);
+        return { success: false, error: error.message };
+    }
+}
+
+async function getRecentMessages(limit = 10) {
+    try {
+        const client = await getTwilioClient();
+        const messages = await client.messages.list({ limit });
+        return {
+            success: true,
+            messages: messages.map(m => ({
+                sid: m.sid,
+                status: m.status,
+                to: m.to,
+                from: m.from,
+                body: m.body?.substring(0, 50) + '...',
+                errorCode: m.errorCode,
+                errorMessage: m.errorMessage,
+                dateSent: m.dateSent
+            }))
+        };
+    } catch (error) {
+        console.error('Get recent messages error:', error.message);
+        return { success: false, error: error.message };
+    }
+}
+
 module.exports = {
     sendSMS,
     sendAppointmentReminder,
@@ -132,5 +176,7 @@ module.exports = {
     sendWalkInReady,
     getTwilioClient,
     getTwilioFromPhoneNumber,
-    isTwilioConfigured
+    isTwilioConfigured,
+    getMessageStatus,
+    getRecentMessages
 };
