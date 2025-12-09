@@ -21,7 +21,7 @@ The SmartMirror platform is built using Node.js (v20.19.3) for the main applicat
 - **Module Configuration UI**: A "Modules" tab in the admin panel allows non-technical users to enable/disable modules, set positions, and configure module-specific settings, with a visual position guide.
 
 ### Technical Implementations
-- **Face Recognition**: Combines Microsoft Azure Face API for cloud-based detection of face attributes (age, gender, emotions) and local `face-api.js` for 100% local face recognition and descriptor storage. Includes a registration system via admin panel or voice command, and retries for reliability.
+- **Face Recognition**: Combines Microsoft Azure Face API (approved December 2024 for facial identification with ambient environment personalization) for cloud-based detection and local `face-api.js` for 100% local face recognition and descriptor storage. Includes a registration system via admin panel or voice command, and retries for reliability.
 - **Voice Commands**: Leverages the browser's Web Speech API for speech recognition with a "Mirror mirror..." wake phrase and text-to-speech responses.
 - **Telegram Bot Integration**: A Python-based Telegram bot (`@BarberMirrorBot`) acts as a mobile-friendly admin console, offering interactive menus for financial tracking, appointment management, customer history, mirror remote control, and message relay to the mirror.
 - **SMS Notifications (Twilio)**: Alternative to Telegram for customers who don't want to install an app. Sends appointment reminders and walk-in queue notifications via text message. Low cost (~$0.008/message).
